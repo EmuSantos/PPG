@@ -1,6 +1,6 @@
 """
 ##################################################################################
-##                      Pico y Placa Generator 2 (PPG2)                          ##
+##                      Pico y Placa Generator   (PPG)                           ##
 ##                         Environmental Zone Project                            ##
 ##                          Here Technologies (2025)                             ##
 ##                      Created by Emi Santos Tinoco - SDS1                      ##
@@ -8,7 +8,7 @@
 ##################################################################################
 
 ## Description:
-## PPG2 is a tool designed to streamline the creation of metadata for vehicle 
+## PPG is a tool designed to streamline the creation of metadata for vehicle 
 ## restriction zones, also known as "Pico y Placa". This tool allows users to 
 ## quickly configure and generate restriction records in a structured format, 
 ## making the process more efficient while maintaining an open-source nature 
@@ -56,12 +56,30 @@ import pandas as pd
 # Streamlit Config
 st.title('Pico y Placa Generator')
 
-# Holidays
-holidays = st.text_area(
-    "Holidays (format DDMMYYYY):",
-    value='01012025, 31122025'
+# Feriados por país
+holidays_by_country = {
+    "Colombia": "01012025, 06012025, 24032025, 17042025, 18042025, 01052025, 02062025, 23062025, 30062025, 20072025, 07082025, 18082025, 13102025, 03112025, 17112025, 08122025, 25122025",
+    "México": "01012025, 03022025, 03032025, 17032025, 17042025, 18042025, 01052025, 05052025, 16092025, 03112025, 17112025, 25122025",
+    "Brazil": "01012025, 01032025, 02032025, 03032025, 04032025, 05032025, 18042025, 21042025, 01052025, 07092025, 12102025, 02112025, 15112025, 24122025, 25122025, 31122025",
+    "Costa Rica": "01012025, 19032025, 11042025, 17042025, 18042025, 01052025, 25072025, 02082025, 15082025, 15092025, 12102025, 24122025, 25122025",
+    "Bolivia": "01012025, 22012025, 03032025, 04032025, 18042025, 01052025, 19062025, 21062025, 06082025, 02112025, 03112025, 25122025",
+    "Ecuador": "01012025, 03032025, 04032025, 18042025, 01052025, 24052025, 10082025, 09102025, 02112025, 03112025, 25122025",
+    "Perú": "01012025, 17042025, 18042025, 01052025, 07062025, 29062025, 23072025, 28072025, 29072025, 06082025, 30082025, 08102025, 01112025, 08122025, 09122025, 25122025",
+    "Chile": "01012025, 18042025, 19042025, 01052025, 21052025, 07062025, 20062025, 29062025, 16072025, 15082025, 20082025, 18092025, 19092025, 12102025, 31102025, 01112025, 16112025, 08122025, 14122025, 25122025, 31122025"
+}
+
+# Select Country 
+country = st.selectbox("Select a country's public holidays:", list(holidays_by_country.keys()))
+selected_holidays = holidays_by_country[country]
+
+# Add Manually if you need it 
+manual_holidays = st.text_area(
+    "Or add holidays manually (format DDMMYYYYYYY, separated by commas):",
+    value=selected_holidays
 )
-holidays = holidays.replace(" ", "").split(',')
+
+# Process Holidays
+holidays = manual_holidays.replace(" ", "").split(',')
 
 # Holidays convert to datetime
 holiday_dates = [datetime.strptime(date, '%d%m%Y').date() for date in holidays]
@@ -87,7 +105,7 @@ def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZkeyname, EZt
 
 # Convert month to 'MM' format (two digits)
 def monthm(varmonth):
-    return varmonth.strftime('%m')  # Formato de mes con dos cifras
+    return varmonth.strftime('%m')  
 
 
 # Convert days to 'DD-DD'
@@ -107,7 +125,7 @@ def dayy(varname):
 vehicle_categories = {
     'AUTO': 3,
     'CARPOOL': 16,
-    'MOTORCYCLE': 2,
+    'MOTO': 2,
     'THROUGH_TRAFFIC': 15,
     'TAXI': 14,
     'TRUCK': 6,
@@ -118,14 +136,17 @@ vehicle_categories = {
 EZvr_values = {
     'License Plate Number': 'LIC_PLATE',
     'OVERRIDE': 'OVERRIDE',
-    'Max_Total_Weight': 'MAX_TOTAL_WGHT'
+    'Max_Total_Weight': 'MAX_TOTAL_WGHT',
+    'Absolute Age' : 'Absolute Age',
+    'REL_VEH_AGE': 'REL_VEH_AGE'
 }
 
 # Ez_Tag Values
 Ez_Tag = {
     'LicensePlate': 3,
     'LicensePlateEnding': 5,
-    'LicensePlateStarting': 7
+    'LicensePlateStarting': 7,
+    'RELATIVE VEHICLE AGE': 0
 }
 
 
@@ -155,6 +176,7 @@ f1 = startdate
 f2 = enddate
 dayT = (f2 - f1).days
 
+##Truck funcion
 if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
     day_texts = st.text_input('Enter Weigth Value:', '')
     selected_days = st.multiselect(
@@ -222,19 +244,28 @@ if st.button("Generar DataFrame"):
     else:
         st.error("Please complete all data before generating the DataFrame.")
 
-# Display DataFrame
+import datetime
+
+# Sort the DataFrame by the vehicle_category column in ascending order
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
+if 'vehicle_category' in df_weekdays.columns:
+    df_weekdays.sort_values(by='vehicle_category', ascending=True, inplace=True)
+
 st.write('### DataFrame:')
 st.dataframe(df_weekdays)
 
-# Export dataframe to CSV
+# Generate dynamic file name
+current_year = datetime.datetime.now().year
+file_name = f"EZ_{EZname}_{EZid}_Metadata_{current_year}.csv"
+
+# Export DataFrame to CSV
 csv = df_weekdays.to_csv(index=False, quoting=1).encode('utf-8')
 
+# Download button with the dynamic file name
 st.download_button(
     label="Download CSV",
     data=csv,
-    file_name='PicoYPlaca_2024.csv',
+    file_name=file_name,
     mime='text/csv',
 )
-
 
