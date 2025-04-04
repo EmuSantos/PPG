@@ -1,12 +1,23 @@
-🚦 Pico y Placa Generator 2 (PPG2)
+🚦 Pico y Placa Generator
 Environmental Zone Project – Here Technologies (2025)
 Author: Emi Santos T – SDS2
-Last Updated: 19 March 2025
+Last Updated: 03 April 2025
 
-📄 Description
-Pico y Placa Generator (PPG2) is a Python-based tool designed to automate the creation of metadata for vehicle restriction zones, commonly known as "Pico y Placa". This tool simplifies the process by providing a graphical interface through Streamlit, allowing users to easily configure and generate restriction records without modifying the code.
+  📄 Description
+  Pico y Placa Generator is a Python-based tool designed to automate the creation of metadata for vehicle restriction zones,   commonly known as "Pico y Placa". This tool simplifies the process by providing a graphical interface through Streamlit,     allowing users to easily configure and generate restriction records without modifying the code.
 
-The tool exports the final data as a CSV file, which can be integrated into external systems for vehicle control and monitoring.
+  The tool exports the final data as a CSV file, which can be integrated into external systems for vehicle control and         monitoring.
+
+📊MMT Files
+Project: MMT Files – Here Technologies (2025)
+Author: Emi Santos T – SDS2
+Last Updated: 03 April 2025
+
+  📄 Description
+  MMT Files is a Python-based tool developed to simplify the process of generating CSV files from existing Excel               documents. It automates the extraction and transformation of data, particularly useful for users who need to work with       metadata, financial information, or large datasets that need to be converted to a standardized CSV format.
+      
+  This tool is designed to handle both large and small Excel files, offering the ability to select specific data ranges,       clean up the data, and export it as CSV files for easy integration into external systems or applications.
+      
 
 🚀 Features
 ✅ User-friendly interface: Built with Streamlit for easy interaction.
@@ -34,6 +45,7 @@ source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate      # Windows
 Install the required dependencies:
 pip install -r requirements.txt
+
 ▶️ Usage
   Run the application:
     streamlit run app.py
@@ -46,29 +58,40 @@ pip install -r requirements.txt
   Export the data:
     Review the generated DataFrame in the interface.
     Download the metadata as a CSV file.
-    
-  ⚙️ Configuration Options
+  MMT Files:
+    Procees the last metadata
+    Create 3 MMT Files 
+      ADDT File
+      Restr File
+      Time File
+    Download the files
+
+⚙️ Configuration Options
 
 ✅ Vehicle Categories
   AUTO: Cars
   CARPOOL: Shared vehicles
-  MOTORCYCLE: Motorcycles
+  MOTO: Motorcycles
   THROUGH_TRAFFIC: Transit vehicles
   TAXI: Taxis
-  TRUCK: Trucks (supports weight-based restrictions)
+  TRUCK: Trucks
   BUS: Buses
 
 🛑 Restriction Values
 License Plate Number: Restriction by plate digits.
 Max_Total_Weight: Restriction by truck weight.
+Absolute Vehicle Age: Restriction for absolute age vehicles 
+Relative Vehicle Age Restriction for relative age vehicles 
+Environmental Badge: Pass to exempt the restriction
 Override: Custom exceptions or overrides.
 
 📆 Holidays
-Enter holidays in DDMMYYYY format.
+Enter or select holidays in DDMMYYYY format.
 The generator automatically excludes holidays from the restriction period.
 
 🛠️ Customization
 You can modify the code to include additional restriction types, validation rules, or custom export formats by editing the Python script.
+
 🐞 Troubleshooting
   🔥 Common Issues
   Duplicate records: Ensure you press "Add Truck Information" only once for the selected date range.
@@ -78,4 +101,4 @@ You can modify the code to include additional restriction types, validation rule
 
 📝 License
 This project is open-source and can be freely used and modified.
-If you use or extend this project, please provide attribution to Emi Santos Tinoco – SDS1 and Here Technologies.
+If you use or extend this project, please provide attribution to Emi Santos Tinoco – SDS2 and Here Technologies.
