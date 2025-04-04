@@ -1,10 +1,10 @@
 """
 ##################################################################################
-##                      Pico y Placa Generator   (PPG)                           ##
+##                      Pico y Placa Generator (PPG)                             ##
 ##                         Environmental Zone Project                            ##
 ##                          Here Technologies (2025)                             ##
 ##                      Created by Emi Santos Tinoco - SDS1                      ##
-##                            Last Updated: 5 March 2025                         ##
+##                            Last Updated: 3 April 2025                         ##
 ##################################################################################
 
 ## Description:
@@ -29,7 +29,8 @@
 ## - Input restriction values based on license plates or maximum total weight.
 ## - Add specific truck restrictions when required.
 ## - Generate and review the resulting DataFrame.
-## - Export the data to a CSV file for further processing.
+## - Export the data to a CSV file 
+## - Generate and review the MMT Files.
 
 ## Dependencies:
 ## - Python 3.x
@@ -52,11 +53,13 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
+import os
+from io import BytesIO
 
 # Streamlit Config
 st.title('Pico y Placa Generator')
 
-# Feriados por país
+# Holidays by country
 holidays_by_country = {
     "Colombia": "01012025, 06012025, 24032025, 17042025, 18042025, 01052025, 02062025, 23062025, 30062025, 20072025, 07082025, 18082025, 13102025, 03112025, 17112025, 08122025, 25122025",
     "México": "01012025, 03022025, 03032025, 17032025, 17042025, 18042025, 01052025, 05052025, 16092025, 03112025, 17112025, 25122025",
@@ -134,11 +137,12 @@ vehicle_categories = {
 
 # Ez_VehicleRestriction Values
 EZvr_values = {
-    'License Plate Number': 'LIC_PLATE',
+    'LICENSE PLATE NUMBER': 'LIC_PLATE',
     'OVERRIDE': 'OVERRIDE',
-    'Max_Total_Weight': 'MAX_TOTAL_WGHT',
-    'Absolute Age' : 'Absolute Age',
-    'REL_VEH_AGE': 'REL_VEH_AGE'
+    'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
+    'ENVIRONMENTAL BADGE' : 'ENV_BADGE',
+    'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
+    'RELATIVE VEHICLE AGE': 'REL_VEH_AGE'
 }
 
 # Ez_Tag Values
@@ -146,7 +150,11 @@ Ez_Tag = {
     'LicensePlate': 3,
     'LicensePlateEnding': 5,
     'LicensePlateStarting': 7,
-    'RELATIVE VEHICLE AGE': 0
+    'Max Total Weight': 8,
+    'Environmental Badge': 9,
+    'Absolute Vehicle Age': 10,
+    'Relative Vehicle Age': 11,
+    'OVERRIDE':12
 }
 
 
@@ -162,13 +170,13 @@ enddate = st.date_input('End Day:', datetime(2025, 12, 31))
 times = st.text_input('Time Range:', '00:00-23:59')
 
 # Config Ezval for days
-ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"]),
-    'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN"])
+ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+    'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "])
     }
 
 # Start/End date to datetime
@@ -176,7 +184,7 @@ f1 = startdate
 f2 = enddate
 dayT = (f2 - f1).days
 
-##Truck funcion
+##TRUCK funcion
 if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
     day_texts = st.text_input('Enter Weigth Value:', '')
     selected_days = st.multiselect(
@@ -201,6 +209,82 @@ if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
             st.success("Days added to the DataFrame.")
         else:
             st.error("Please select at least one day and one value.")
+
+## RELATIVE VEHICLE AGE function
+if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
+    selected_date = st.date_input('Enter Age Restriction:')  
+    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
+
+    selected_days = st.multiselect(
+        'Select Days for Relative Vehicle Age Restriction:',
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
+
+    if st.button("Add Relative Vehicle Age Information"):
+        if selected_days and EZval:
+            for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
+                if single_date in holiday_dates:
+                    continue
+                
+                weekday = single_date.strftime('%A')
+                if weekday in selected_days:
+                    ez_values = list(set([EZval]))  # Assigns date to EZ_VALUES
+                    
+                    for val in ez_values:
+                        for category in selected_categories:
+                            VcatID = vehicle_categories.get(category, 'Unknown')  
+                            record = addreg(
+                                EZname, EZid, category, VcatID, 
+                                'RELATIVE VEHICLE AGE', 'REL_VEH_AGE', 
+                                EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'), 
+                                val, times,  
+                                dayy(weekday), monthm(single_date), 
+                                single_date.strftime("%Y%m%d")
+                            )
+                            
+                            if record not in st.session_state.setdefault('records_weekdays', []):
+                                st.session_state.records_weekdays.append(record)
+
+            st.success("Days added to the DataFrame.")
+        else:
+            st.error("Please select at least one day and enter an age restriction.")
+
+
+## ABSOLUTE VEHICLE AGE function
+if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
+    selected_date = st.date_input('Enter Age Restriction:')  
+    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
+
+    selected_days = st.multiselect(
+        'Select Days for Absolute Vehicle Age Restriction:',
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
+
+    if st.button("Add Absolute Vehicle Age Information"):
+        if selected_days and EZval:
+            for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
+                if single_date in holiday_dates:
+                    continue
+                
+                weekday = single_date.strftime('%A')
+                if weekday in selected_days:
+                    ez_values = list(set([EZval]))  # Assigns date to EZ_VALUES
+                    
+                    for val in ez_values:
+                        for category in selected_categories:
+                            VcatID = vehicle_categories.get(category, 'Unknown')  
+                            record = addreg(
+                                EZname, EZid, category, VcatID, 
+                                'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'), val, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
+                            )
+                            
+                            
+                            if record not in st.session_state.setdefault('records_weekdays', []):
+                                st.session_state.records_weekdays.append(record)
+
+            st.success("Days added to the DataFrame.")
+        else:
+            st.error("Please select at least one day and enter an age restriction.")
 
 
 # Records Weekdays
@@ -246,10 +330,10 @@ if st.button("Generar DataFrame"):
 
 import datetime
 
-# Sort the DataFrame by the vehicle_category column in ascending order
+# Sort the DataFrame by the EZ_ADDT_TAG column in ascending order
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
-if 'vehicle_category' in df_weekdays.columns:
-    df_weekdays.sort_values(by='vehicle_category', ascending=True, inplace=True)
+if 'EZ_ADDT_TAG' in df_weekdays.columns:
+    df_weekdays.sort_values(by='EZ_ADDT_TAG', ascending=True, inplace=True)
 
 st.write('### DataFrame:')
 st.dataframe(df_weekdays)
@@ -269,3 +353,206 @@ st.download_button(
     mime='text/csv',
 )
 
+##-------------------------------------MMT FILES PROCESSING----------------------------##
+
+def convert_df_to_csv(df):
+    """Convert a DataFrame to CSV binary format for download."""
+    output = BytesIO()
+    df.to_csv(output, index=False, header=False, encoding='utf-8')
+    output.seek(0)
+    return output.getvalue()
+
+def process_excel_to_csv(input_file):
+    if hasattr(input_file, 'name'):
+        filename = input_file.name
+    else:
+        filename = input_file
+
+    # Detect file format and load the DataFrame
+    if filename.endswith('.csv'):
+        df = pd.read_csv(input_file)
+    elif filename.endswith(('.xls', '.xlsx')):
+        df = pd.read_excel(input_file)
+    else:
+        raise ValueError("Formato de archivo no soportado. Use .xlsx, .xls o .csv")
+    
+    # Ordenar la columna vehicle_category de A a Z si existe
+    if 'vehicle_category' in df.columns:
+        df = df.sort_values(by=['vehicle_category'])
+
+    # Convertir valores antes del guion en ciertas columnas
+    for col in ['dayFrom_dayTo', 'monthFrom_monthTo']:
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.split('-').str[0]
+
+    # Assign Restriction_id
+    restriction_id = 1
+    df.at[0, "Restriction_id"] = restriction_id
+    
+    for i in range(1, len(df)):
+        if (
+            df.at[i, "vehicle_category"] != df.at[i - 1, "vehicle_category"] or
+            df.at[i, "timeFrom_timeTo"] != df.at[i - 1, "timeFrom_timeTo"] or
+            df.at[i, "dateFrom_dateTo"] != df.at[i - 1, "dateFrom_dateTo"]
+        ):
+            restriction_id += 1
+        df.at[i, "Restriction_id"] = restriction_id
+
+    # Values for file name
+    envzone_id = df['ENVZONE_ID'].iloc[0] if not df['ENVZONE_ID'].empty else 'Unknown'
+    today = datetime.datetime.today()
+    date_str = f"{today.day}_{today.month}_{today.year}"
+    output_filename = f"ADD_EZ_ADDT_RESTRS_{envzone_id}_{date_str}.csv"
+    
+    # Create file ADD_EZ_ADDT_RESTRS
+    addt_df = pd.DataFrame({
+        'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
+        'OK': 'OK',
+        'ENVZONE_ID': df['ENVZONE_ID'],
+        'Restriction_id': df['Restriction_id'],
+        'ADDITIONAL': 'ADDITIONAL',
+        'EZ_ADDT_TAG': df['EZ_ADDT_TAG'],
+        'EZ_VALUES': df['EZ_VALUES'],
+        'NULL': '',
+        'NULL2': '',
+        'NULL3': '',
+        'NULL4': '',
+        'NULL5': '',
+        'N': 'N'
+    })
+    
+    # Ensure column ‘N’ is in position M (13)
+    addt_df = addt_df[['EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id', 
+                     'ADDITIONAL', 'EZ_ADDT_TAG', 'EZ_VALUES', 
+                     'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N']]
+    
+    # Sort by Restriction_id A to Z
+    addt_df = addt_df.sort_values(by=['Restriction_id'])
+    
+    # Remove duplicates based on Restriction_id
+    unique_restrictions = df.drop_duplicates(subset='Restriction_id')
+
+    # Generate names for ADD_EZ_REST_ and ADD_EZ_TIME_RESTR_
+    rest_filename = f"ADD_EZ_REST_{envzone_id}_{date_str}.csv"
+    time_restr_filename = f"ADD_EZ_TIME_RESTR_{envzone_id}_{date_str}.csv"
+
+    # Create file ADD_EZ_REST_
+    rest_df = pd.DataFrame({
+        'EZ_RESTR': 'EZ_RESTR',
+        'OK': 'OK',
+        'ENVZONE_ID': unique_restrictions['ENVZONE_ID'],
+        'Restriction_id': unique_restrictions['Restriction_id'].astype(float).astype(int),
+        'vehicle_category_id': unique_restrictions['vehicle_category_id'],
+        'EZ_KEY_ID': unique_restrictions['EZ_KEY_ID'],
+        'LICENSE PLATE': unique_restrictions.apply(lambda row: '' if row['EZ_KEY_ID'] == 'OVERRIDE' else (row['EZ_VALUES'] if row['EZ_KEY_ID'] == 'MAX_TOTAL_WGHT' else 'LICENSE PLATE'), axis=1),
+        'NULL': '',
+        'NULL2': '',
+        'NULL3': '',
+        'NULL4': '',
+        'NULL5': '',
+        'N': 'N'
+    })
+
+    # Ensure column ‘N’ is in position M (13)
+    rest_df = rest_df[['EZ_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id', 
+                       'vehicle_category_id', 'EZ_KEY_ID', 'LICENSE PLATE', 
+                       'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N']]
+
+    # Sort by Restriction_id from lowest to highest and remove duplicates
+    rest_df = rest_df.drop_duplicates(subset='Restriction_id').sort_values(by='Restriction_id')
+
+    # Create file ADD_EZ_TIME_RESTR
+    time_restr_df = pd.DataFrame({
+        'EZ_TIME_RESTR': 'EZ_TIME_RESTR',
+        'OK': 'OK',
+        'ENVZONE_ID': unique_restrictions['ENVZONE_ID'],
+        'Restriction_id': unique_restrictions['Restriction_id'].astype(float).astype(int),
+        'timeFrom_timeTo': unique_restrictions['timeFrom_timeTo'],
+        'dayFrom_dayTo': unique_restrictions['dayFrom_dayTo'],
+        'monthFrom_monthTo': unique_restrictions['monthFrom_monthTo'],
+        'dateFrom_dateTo': unique_restrictions['dateFrom_dateTo'],
+        'NULL':' ',
+        'NULL2':' ',
+        'NULL3':' ',
+        'NULL4':' ',
+        'N': 'N'
+    })
+
+    # Sort by Restriction_id from lowest to highest and remove duplicates
+    time_restr_df = time_restr_df.drop_duplicates(subset='Restriction_id').sort_values(by='Restriction_id')
+    
+    
+    # Conditions for MMT files
+    rest_df.loc [rest_df['EZ_KEY_ID'] == 'OVERRIDE', 'NULL2'] = 'COST' 
+    rest_df.loc[rest_df['EZ_KEY_ID'] == 'REL_VEH_AGE', 'LICENSE PLATE'] = unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'REL_VEH_AGE', 'EZ_VALUES'].values
+    rest_df.loc[rest_df['EZ_KEY_ID'] == 'ABS_VEH_AGE', 'LICENSE PLATE'] = unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'ABS_VEH_AGE', 'EZ_VALUES'].values
+    addt_df = addt_df[~addt_df['EZ_ADDT_TAG'].isin([8, 9, 10, 11, 12])]
+    time_restr_df = time_restr_df[~time_restr_df['Restriction_id'].isin(unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'OVERRIDE', 'Restriction_id'])]
+
+
+
+    return addt_df, output_filename, rest_df, rest_filename, time_restr_df, time_restr_filename
+
+
+# MMT Files Processor title
+st.title("MMT Files Processor")
+
+uploaded_file = st.file_uploader("Upload Metadata (Always )", type=["csv", "xlsx", "xls"])
+
+#  Buttons for processing files
+if uploaded_file and st.button("Process File"):
+    addt_df, addt_filename, rest_df, rest_filename, time_restr_df, time_restr_filename = process_excel_to_csv(uploaded_file)
+
+    st.session_state["addt_df"] = addt_df
+    st.session_state["rest_df"] = rest_df
+    st.session_state["time_restr_df"] = time_restr_df
+
+    st.session_state["addt_csv"] = convert_df_to_csv(addt_df)
+    st.session_state["rest_csv"] = convert_df_to_csv(rest_df)
+    st.session_state["time_restr_csv"] = convert_df_to_csv(time_restr_df)
+
+    st.session_state["addt_filename"] = addt_filename
+    st.session_state["rest_filename"] = rest_filename
+    st.session_state["time_restr_filename"] = time_restr_filename
+
+    st.success("✅ File processed successfully")
+
+# Show tables
+if "addt_df" in st.session_state:
+    st.write("### 📊 ADD_EZ_ADDT_RESTRS DataFrame:")
+    st.dataframe(st.session_state["addt_df"])
+
+    st.write("### 📊 ADD_EZ_REST DataFrame:")
+    st.dataframe(st.session_state["rest_df"])
+
+    st.write("### 📊 ADD_EZ_TIME_RESTR DataFrame:")
+    st.dataframe(st.session_state["time_restr_df"])
+
+# Download buttons
+if "addt_csv" in st.session_state:
+    st.write("### 📥 Download files:")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.download_button(
+            label="📄 Download ADD_EZ_ADDT_RESTRS",
+            data=st.session_state["addt_csv"],
+            file_name=st.session_state["addt_filename"],
+            mime="text/csv"
+        )
+
+    with col2:
+        st.download_button(
+            label="📄 Download      ADD_EZ_REST",
+            data=st.session_state["rest_csv"],
+            file_name=st.session_state["rest_filename"],
+            mime="text/csv"
+        )
+
+    with col3:
+        st.download_button(
+            label="📄 Download ADD_EZ_TIME_RESTR",
+            data=st.session_state["time_restr_csv"],
+            file_name=st.session_state["time_restr_filename"],
+            mime="text/csv"
+        )
