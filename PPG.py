@@ -3,8 +3,8 @@
 ##                      Pico y Placa Generator (PPG)                             ##
 ##                         Environmental Zone Project                            ##
 ##                          Here Technologies (2025)                             ##
-##                      Created by Emi Santos Tinoco - SDS1                      ##
-##                            Last Updated: 3 April 2025                         ##
+##                      Created by Emi Santos Tinoco - SDS2                      ##
+##                            Last Updated: 8 April 2025                         ##
 ##################################################################################
 
 ## Description:
@@ -13,6 +13,8 @@
 ## quickly configure and generate restriction records in a structured format,
 ## making the process more efficient while maintaining an open-source nature 
 ## for customization. 
+## This tool offers the ability to edit the Metadata on a serial or specific 
+## day-to-day basis.
 
 ## Features:
 ## - User-friendly interface with Streamlit.
@@ -20,14 +22,15 @@
 ## - Dynamic handling of holidays and date ranges.
 ## - Support for multiple vehicle categories.
 ## - Export functionality to CSV format.
-## - Customizable restrictions, including weight-based limitations for trucks.
+## - Customizable restrictions, including weight-based limitations for trucks, 
+##   cases such as absolute and relative age for cars or the Environmental Badge option.
 
 ## Usage:
 ## - Enter the environmental zone name and ID.
 ## - Select vehicle restriction values and additional tags.
 ## - Define the applicable date range and time periods.
 ## - Input restriction values based on license plates or maximum total weight.
-## - Add specific truck restrictions when required.
+## - Add specific (Day by day, Weigth, Absolute or Relative Vehicle Age or Environmental Badge) restrictions when required.
 ## - Generate and review the resulting DataFrame.
 ## - Export the data to a CSV file 
 ## - Generate and review the MMT Files.
@@ -57,6 +60,7 @@ from io import BytesIO
 
 # Streamlit Config
 st.title('Pico y Placa Generator')
+
 
 # Holidays by country
 holidays_by_country = {
@@ -179,8 +183,8 @@ ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 
 f1 = startdate
 f2 = enddate
 dayT = (f2 - f1).days
-
-##TRUCK funcion
+                     
+##TRUCK function
 if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
     day_texts = st.text_input('Enter Weigth Value:', '')
     selected_days = st.multiselect(
@@ -252,6 +256,7 @@ if EZvr_values[EZvr_selected] == 'ENV_BADGE':
 
     selected_days = ' '
 
+    # Nuevo input para los meses
     selected_months = st.multiselect(
         'Select Months for Restriction:',
         [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
@@ -300,6 +305,7 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
         ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     )
 
+    # Nuevo input para los meses
     selected_months = st.multiselect(
         'Select Months for Restriction:',
         [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
@@ -308,12 +314,15 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
 
     if st.button("Add Absolute Vehicle Age Information"):
         if selected_days and EZval and selected_months:
+            # Determinar número de días seleccionados para dayFrom_dayTo
             days_selected_count = len(selected_days)
             day_range = f"0{days_selected_count}" if days_selected_count < 10 else str(days_selected_count)
 
+            # Determinar rango de meses seleccionados
             sorted_months = sorted(int(month) for month in selected_months)
             month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
 
+            # Construir dateFrom_dateTo a partir de startdate y enddate
             date_range = f"{startdate.strftime('%Y%m%d')}-{enddate.strftime('%Y%m%d')}"
 
             for category in selected_categories:
@@ -332,6 +341,84 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
         else:
             st.error("Please select at least one day, one month, and enter an age restriction.")
 
+##---------------------------Restrictions by Day----------------------##
+def group_by_consecutive_weeks(dates):
+    """Groups dates by consecutive weeks, even if they don't start on Monday."""
+    weeks = []
+    current_week = []
+
+    for date in dates:
+        # Append dates into weeks
+        if len(current_week) == 7 or (len(current_week) > 0 and date.weekday() == 0):
+            weeks.append(current_week)
+            current_week = []
+
+        current_week.append(date)
+
+    # Append the last week
+    if current_week:
+        weeks.append(current_week)
+
+    return weeks
+
+
+# Usar un checkbox con un key único y almacenar su estado en session_state
+if 'restriction_by_day' not in st.session_state:
+    st.session_state.restriction_by_day = False
+
+restriction_by_day = st.checkbox("Restriction Day by Day", key="restriction_by_day_checkbox")
+st.session_state.restriction_by_day = restriction_by_day
+
+if st.session_state.restriction_by_day:
+    # Group dates by month
+    day_count = (enddate - startdate).days + 1
+    dates_by_month = {}
+
+    for n in range(day_count):
+        current_date = startdate + timedelta(days=n)
+
+        # Skip holidays
+        if current_date in holiday_dates:
+            continue
+
+        month_name = current_date.strftime('%B %Y')
+        
+        if month_name not in dates_by_month:
+            dates_by_month[month_name] = []
+
+        dates_by_month[month_name].append(current_date)
+
+    # Display weekly input by month
+    plates_per_day = {}
+
+    st.write("### Enter plate numbers")
+
+    for month, dates in dates_by_month.items():
+        weeks = group_by_consecutive_weeks(dates)
+
+        with st.expander(f"📅 {month}", expanded=False):  # Collapsible month section
+            for week_num, week_dates in enumerate(weeks, start=1):
+                st.write(f"**Week {week_num}**")
+
+                num_days = len(week_dates)
+                cols = st.columns(num_days)  # Columns for each day in the week
+
+                for i, date in enumerate(week_dates):
+                    weekday = date.strftime('%A')
+                    plate_input = cols[i].text_area(
+                        f"{weekday} - {date.strftime('%d')}", 
+                        key=f"{month}_{date.strftime('%d')}"
+                    )
+
+                    plates = [plate.strip() for plate in plate_input.split(',') if plate.strip()]
+
+                    if plates:
+                        plates_per_day[date] = plates  # Records plates per day
+else:
+    plates_per_day = {}  # If it is not activated, leave plates_per_day empty
+
+
+##---------------------------Restrictions by Day END----------------------##
 
 # Records Weekdays
 if 'records_weekdays' not in st.session_state:
@@ -344,21 +431,30 @@ def generate_records():
     EZkeyname = EZvr_selected
 
     for single_date in (f1 + timedelta(n) for n in range(dayT + 1)):
-        if single_date.date() in holiday_dates: 
+        if single_date in holiday_dates: 
             continue
 
         weekday = single_date.strftime('%A')
-        if weekday not in ezval or not ezval[weekday]:
-            continue
+        
+        if st.session_state.restriction_by_day and single_date in plates_per_day:
+            ez_values = plates_per_day[single_date]  #  Use day-specific values
+        else:
+            # If there are no specific values, use those of ezval (multiselect).
+            if weekday not in ezval or not ezval[weekday]:
+                continue
+            ez_values = list(set(ezval[weekday]))
 
-        ez_values = list(set(ezval[weekday]))
         day_ft = dayy(weekday)
         month_ft = monthm(single_date)
 
         for val in ez_values:
             for category in selected_categories:
                 VcatID = vehicle_categories[category]
-                record = addreg(EZname, EZid, category, VcatID, EZkeyname, EZvr_value, EZtag_selected, EZkeyid_value, val, times, day_ft, month_ft, single_date.strftime("%Y%m%d"))
+                record = addreg(
+                    EZname, EZid, category, VcatID, EZkeyname, EZvr_value, 
+                    EZtag_selected, EZkeyid_value, val, times, day_ft, month_ft, 
+                    single_date.strftime("%Y%m%d")
+                )
                 if record not in st.session_state.records_weekdays:
                     st.session_state.records_weekdays.append(record)
 
@@ -374,19 +470,16 @@ if st.button("Generar DataFrame"):
     else:
         st.error("Please complete all data before generating the DataFrame.")
 
-import datetime
-
-
 # Sort the DataFrame by the EZ_ADDT_TAG column in ascending order
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 if 'EZ_ADDT_TAG' in df_weekdays.columns:
     df_weekdays.sort_values(by='EZ_ADDT_TAG', ascending=True, inplace=True)
 
-st.write('### DataFrame:')
+st.write('### EZ MetaData:')
 st.dataframe(df_weekdays)
 
 # Generate dynamic file name
-current_year = datetime.datetime.now().year
+current_year = datetime.now().year  # Corrección: usar datetime directamente
 file_name = f"EZ_{EZname}_{EZid}_Metadata_{current_year}.csv"
 
 # Export DataFrame to CSV
@@ -399,7 +492,6 @@ st.download_button(
     file_name=file_name,
     mime='text/csv',
 )
-
 ##-------------------------------------MMT FILES PROCESSING----------------------------##
 
 def convert_df_to_csv(df):
@@ -544,7 +636,7 @@ def process_excel_to_csv(input_file):
 # MMT Files Processor title
 st.title("MMT Files Processor")
 
-uploaded_file = st.file_uploader("Upload Metadata (Always )", type=["csv", "xlsx", "xls"])
+uploaded_file = st.file_uploader("Upload Metadata (Remember to always sort your file )", type=["csv", "xlsx", "xls"])
 
 #  Buttons for processing files
 if uploaded_file and st.button("Process File"):
