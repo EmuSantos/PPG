@@ -1,7 +1,6 @@
 🚦 Pico y Placa Generator
 Environmental Zone Project – Here Technologies (2025)
 Author: Emi Santos T – SDS2
-Last Updated: 03 April 2025
 
   📄 Description
   Pico y Placa Generator is a Python-based tool designed to automate the creation of metadata for vehicle restriction zones,   commonly known as "Pico y Placa". This tool simplifies the process by providing a graphical interface through Streamlit,     allowing users to easily configure and generate restriction records without modifying the code.
@@ -11,7 +10,7 @@ Last Updated: 03 April 2025
 📊MMT Files
 Project: MMT Files – Here Technologies (2025)
 Author: Emi Santos T – SDS2
-Last Updated: 03 April 2025
+
 
   📄 Description
   MMT Files is a Python-based tool developed to simplify the process of generating CSV files from existing Excel               documents. It automates the extraction and transformation of data, particularly useful for users who need to work with       metadata, financial information, or large datasets that need to be converted to a standardized CSV format.
