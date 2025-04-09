@@ -10,7 +10,7 @@
 ## Description:
 ## PPG is a tool designed to streamline the creation of metadata for vehicle 
 ## restriction zones, also known as "Pico y Placa". This tool allows users to 
-## quickly configure and generate restriction records in a structured format, 
+## quickly configure and generate restriction records in a structured format,
 ## making the process more efficient while maintaining an open-source nature 
 ## for customization. 
 
@@ -48,7 +48,6 @@
 ##   suit their requirements while maintaining proper attribution.
 
 """
-
 
 import streamlit as st
 from datetime import datetime, timedelta
@@ -110,7 +109,6 @@ def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZkeyname, EZt
 def monthm(varmonth):
     return varmonth.strftime('%m')  
 
-
 # Convert days to 'DD-DD'
 def dayy(varname):
     day_map = {
@@ -156,8 +154,6 @@ Ez_Tag = {
     'Relative Vehicle Age': 11,
     'OVERRIDE':12
 }
-
-
 
 # Insert text 
 EZname = st.text_input('Zone Name:', 'Pico y Placa')
@@ -249,8 +245,53 @@ if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
         else:
             st.error("Please select at least one day and enter an age restriction.")
 
+## ENVIRONMENTAL BADGE function ONLY ONE RECORD PER VEHICLE
+if EZvr_values[EZvr_selected] == 'ENV_BADGE':
+    selected_date = st.date_input('Enter Age Environmental Badge:')  
+    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
 
-## ABSOLUTE VEHICLE AGE function
+    selected_days = ' '
+
+    # Nuevo input para los meses
+    selected_months = st.multiselect(
+        'Select Months for Restriction:',
+        [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
+        default=[f"{i:02}" for i in range(1, 13)]  # Default: all months
+    )
+
+    if st.button("Add Environmental Badge Information"):
+        if selected_days and EZval and selected_months:
+            days_selected_count = len(selected_days)
+            day_range = ' '
+
+            sorted_months = sorted(int(month) for month in selected_months)
+            month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
+
+            date_from = startdate.strftime('%Y%m%d')
+            date_to = enddate.strftime('%Y%m%d')
+            date_range = f"{date_from}"
+            
+            if date_range.count(' ') > 1:
+                parts = date_range.split(' ')
+                date_range = f"{parts[0]}{parts[1]}"
+
+            for category in selected_categories:
+                VcatID = vehicle_categories.get(category, 'Unknown')  
+                record = addreg(
+                    EZname, EZid, category, VcatID, 
+                    'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
+                    EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'),
+                    EZval, ' ', ' ', month_range, ' '
+                )
+
+                if record not in st.session_state.setdefault('records_weekdays', []):
+                    st.session_state.records_weekdays.append(record)
+
+            st.success("Restriction successfully added for each selected vehicle category.")
+        else:
+            st.error("Please select at least one day, one month, and enter an age restriction.")
+
+## ABSOLUTE VEHICLE AGE function ONLY ONE RECORD PER VEHICLE
 if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
     selected_date = st.date_input('Enter Age Restriction:')  
     EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
@@ -260,31 +301,41 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
         ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     )
 
-    if st.button("Add Absolute Vehicle Age Information"):
-        if selected_days and EZval:
-            for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
-                if single_date in holiday_dates:
-                    continue
-                
-                weekday = single_date.strftime('%A')
-                if weekday in selected_days:
-                    ez_values = list(set([EZval]))  # Assigns date to EZ_VALUES
-                    
-                    for val in ez_values:
-                        for category in selected_categories:
-                            VcatID = vehicle_categories.get(category, 'Unknown')  
-                            record = addreg(
-                                EZname, EZid, category, VcatID, 
-                                'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'), val, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
-                            )
-                            
-                            
-                            if record not in st.session_state.setdefault('records_weekdays', []):
-                                st.session_state.records_weekdays.append(record)
+    # Nuevo input para los meses
+    selected_months = st.multiselect(
+        'Select Months for Restriction:',
+        [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
+        default=[f"{i:02}" for i in range(1, 13)]  # Default: all months
+    )
 
-            st.success("Days added to the DataFrame.")
+    if st.button("Add Absolute Vehicle Age Information"):
+        if selected_days and EZval and selected_months:
+            # Determinar número de días seleccionados para dayFrom_dayTo
+            days_selected_count = len(selected_days)
+            day_range = f"0{days_selected_count}" if days_selected_count < 10 else str(days_selected_count)
+
+            # Determinar rango de meses seleccionados
+            sorted_months = sorted(int(month) for month in selected_months)
+            month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
+
+            # Construir dateFrom_dateTo a partir de startdate y enddate
+            date_range = f"{startdate.strftime('%Y%m%d')}-{enddate.strftime('%Y%m%d')}"
+
+            for category in selected_categories:
+                VcatID = vehicle_categories.get(category, 'Unknown')  
+                record = addreg(
+                    EZname, EZid, category, VcatID, 
+                    'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
+                    EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'),
+                    EZval, times, day_range, month_range, date_range
+                )
+
+                if record not in st.session_state.setdefault('records_weekdays', []):
+                    st.session_state.records_weekdays.append(record)
+
+            st.success("Restriction successfully added for each selected vehicle category.")
         else:
-            st.error("Please select at least one day and enter an age restriction.")
+            st.error("Please select at least one day, one month, and enter an age restriction.")
 
 
 # Records Weekdays
@@ -298,7 +349,7 @@ def generate_records():
     EZkeyname = EZvr_selected
 
     for single_date in (f1 + timedelta(n) for n in range(dayT + 1)):
-        if single_date in holiday_dates:
+        if single_date.date() in holiday_dates: 
             continue
 
         weekday = single_date.strftime('%A')
@@ -329,6 +380,7 @@ if st.button("Generar DataFrame"):
         st.error("Please complete all data before generating the DataFrame.")
 
 import datetime
+
 
 # Sort the DataFrame by the EZ_ADDT_TAG column in ascending order
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
