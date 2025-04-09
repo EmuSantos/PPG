@@ -252,7 +252,6 @@ if EZvr_values[EZvr_selected] == 'ENV_BADGE':
 
     selected_days = ' '
 
-    # Nuevo input para los meses
     selected_months = st.multiselect(
         'Select Months for Restriction:',
         [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
@@ -301,7 +300,6 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
         ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     )
 
-    # Nuevo input para los meses
     selected_months = st.multiselect(
         'Select Months for Restriction:',
         [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
@@ -310,15 +308,12 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
 
     if st.button("Add Absolute Vehicle Age Information"):
         if selected_days and EZval and selected_months:
-            # Determinar número de días seleccionados para dayFrom_dayTo
             days_selected_count = len(selected_days)
             day_range = f"0{days_selected_count}" if days_selected_count < 10 else str(days_selected_count)
 
-            # Determinar rango de meses seleccionados
             sorted_months = sorted(int(month) for month in selected_months)
             month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
 
-            # Construir dateFrom_dateTo a partir de startdate y enddate
             date_range = f"{startdate.strftime('%Y%m%d')}-{enddate.strftime('%Y%m%d')}"
 
             for category in selected_categories:
