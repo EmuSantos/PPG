@@ -539,7 +539,7 @@ def process_excel_to_csv(input_file):
 
     # Values for file name
     envzone_id = df['ENVZONE_ID'].iloc[0] if not df['ENVZONE_ID'].empty else 'Unknown'
-    today = datetime.datetime.today()
+    today = datetime.today()
     date_str = f"{today.day}_{today.month}_{today.year}"
     output_filename = f"ADD_EZ_ADDT_RESTRS_{envzone_id}_{date_str}.csv"
     
