@@ -59,7 +59,7 @@ import os
 from io import BytesIO
 
 # Streamlit Config
-st.title('Pico y Placa Generator')
+st.title('Pico y Placa Generator🚗')
 
 
 # Holidays by country
