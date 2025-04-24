@@ -91,7 +91,7 @@ holidays = manual_holidays.replace(" ", "").split(',')
 holiday_dates = [datetime.strptime(date, '%d%m%Y').date() for date in holidays]
 
 # Function AddReg 
-def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZkeyname, EZtag, EZval, timeft, dayft, monthft, dateft):
+def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyname, EZval, timeft, dayft, monthft, dateft):
     return {
         'ENVZONE_NAME': EZname,
         'ENVZONE_ID': EZid,
@@ -100,8 +100,8 @@ def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZkeyname, EZt
         'vehicle_category_id': VcatID,
         'EZ_VR_VALUES': EZvr_value,  # EZ Vehicle Restrictions
         'EZ_KEY_ID': EZkeyid_value,  # EZ_KEY_ID
-        'EZ_KEY_NAMES': EZkeyname,   # EZ_KEY_NAMES
-        'EZ_ADDT_TAG': EZtag,
+        'EZ_ADDT_TAG': EZkeyname,   
+        'EZ_KEY_NAME': EZtag,      
         'EZ_VALUES': EZval,
         'timeFrom_timeTo': timeft,
         'dayFrom_dayTo': dayft,
@@ -201,7 +201,7 @@ if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
                 if weekday in selected_days:
                     VcatID = vehicle_categories['TRUCK']
                     record = addreg(
-                        EZname, EZid, 'TRUCK', VcatID, 'Max_Total_Weight', 'MAX_TOTAL_WGHT', EZtag_selected, Ez_Tag[EZtag_selected], day_texts, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
+                        EZname, EZid, 'TRUCK', VcatID, 'Max_Total_Weight', 'MAX_TOTAL_WGHT', Ez_Tag[EZtag_selected], EZtag_selected, day_texts, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
                     )
                     
                     if record not in st.session_state.setdefault('records_weekdays', []):
@@ -236,7 +236,7 @@ if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
                             record = addreg(
                                 EZname, EZid, category, VcatID, 
                                 'RELATIVE VEHICLE AGE', 'REL_VEH_AGE', 
-                                EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'), 
+                                Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected,  
                                 val, times,  
                                 dayy(weekday), monthm(single_date), 
                                 single_date.strftime("%Y%m%d")
@@ -284,7 +284,7 @@ if EZvr_values[EZvr_selected] == 'ENV_BADGE':
                 record = addreg(
                     EZname, EZid, category, VcatID, 
                     'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
-                    EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'),
+                    Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected, 
                     EZval, ' ', ' ', month_range, ' '
                 )
 
@@ -330,7 +330,7 @@ if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
                 record = addreg(
                     EZname, EZid, category, VcatID, 
                     'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
-                    EZtag_selected, Ez_Tag.get(EZtag_selected, 'Unknown'),
+                    Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected, 
                     EZval, times, day_range, month_range, date_range
                 )
 
@@ -452,7 +452,7 @@ def generate_records():
                 VcatID = vehicle_categories[category]
                 record = addreg(
                     EZname, EZid, category, VcatID, EZkeyname, EZvr_value, 
-                    EZtag_selected, EZkeyid_value, val, times, day_ft, month_ft, 
+                    EZkeyid_value, EZtag_selected, val, times, day_ft, month_ft, 
                     single_date.strftime("%Y%m%d")
                 )
                 if record not in st.session_state.records_weekdays:
@@ -475,6 +475,10 @@ df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 if 'EZ_ADDT_TAG' in df_weekdays.columns:
     df_weekdays.sort_values(by='EZ_ADDT_TAG', ascending=True, inplace=True)
 
+# ABS_VEH_AGE Date
+if not df_weekdays.empty and 'EZ_KEY_NAME' in df_weekdays.columns:
+    df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'] = df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'].str[:-18]
+
 st.write('### EZ MetaData:')
 st.dataframe(df_weekdays)
 
@@ -492,7 +496,7 @@ st.download_button(
     file_name=file_name,
     mime='text/csv',
 )
-##-------------------------------------MMT FILES PROCESSING----------------------------##
+############################### M M T   F I L E S   P R O C E S S I N G #################################
 
 def convert_df_to_csv(df):
     """Convert a DataFrame to CSV binary format for download."""
@@ -550,19 +554,19 @@ def process_excel_to_csv(input_file):
         'ENVZONE_ID': df['ENVZONE_ID'],
         'Restriction_id': df['Restriction_id'],
         'ADDITIONAL': 'ADDITIONAL',
-        'EZ_ADDT_TAG': df['EZ_ADDT_TAG'],
+        'EZ_KEY_NAME': df['EZ_KEY_NAME'],
         'EZ_VALUES': df['EZ_VALUES'],
-        'NULL': '',
-        'NULL2': '',
-        'NULL3': '',
-        'NULL4': '',
-        'NULL5': '',
+        'NULL':' ',
+        'NULL2':' ',
+        'NULL3':' ',
+        'NULL4':' ',
+        'NULL5':' ',
         'N': 'N'
     })
     
     # Ensure column ‘N’ is in position M (13)
     addt_df = addt_df[['EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id', 
-                     'ADDITIONAL', 'EZ_ADDT_TAG', 'EZ_VALUES', 
+                     'ADDITIONAL', 'EZ_KEY_NAME', 'EZ_VALUES', 
                      'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N']]
     
     # Sort by Restriction_id A to Z
@@ -584,11 +588,11 @@ def process_excel_to_csv(input_file):
         'vehicle_category_id': unique_restrictions['vehicle_category_id'],
         'EZ_KEY_ID': unique_restrictions['EZ_KEY_ID'],
         'LICENSE PLATE': unique_restrictions.apply(lambda row: '' if row['EZ_KEY_ID'] == 'OVERRIDE' else (row['EZ_VALUES'] if row['EZ_KEY_ID'] == 'MAX_TOTAL_WGHT' else 'LICENSE PLATE'), axis=1),
-        'NULL': '',
-        'NULL2': '',
-        'NULL3': '',
-        'NULL4': '',
-        'NULL5': '',
+        'NULL':' ',
+        'NULL2':' ',
+        'NULL3':' ',
+        'NULL4':' ',
+        'NULL5':' ',
         'N': 'N'
     })
 
@@ -625,10 +629,12 @@ def process_excel_to_csv(input_file):
     rest_df.loc [rest_df['EZ_KEY_ID'] == 'OVERRIDE', 'NULL2'] = 'COST' 
     rest_df.loc[rest_df['EZ_KEY_ID'] == 'REL_VEH_AGE', 'LICENSE PLATE'] = unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'REL_VEH_AGE', 'EZ_VALUES'].values
     rest_df.loc[rest_df['EZ_KEY_ID'] == 'ABS_VEH_AGE', 'LICENSE PLATE'] = unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'ABS_VEH_AGE', 'EZ_VALUES'].values
-    addt_df = addt_df[~addt_df['EZ_ADDT_TAG'].isin([8, 9, 10, 11, 12])]
+    addt_df = addt_df[~addt_df['EZ_KEY_NAME'].isin([8, 9, 10, 11, 12])]
     time_restr_df = time_restr_df[~time_restr_df['Restriction_id'].isin(unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'OVERRIDE', 'Restriction_id'])]
-
-
+    time_restr_df['dayFrom_dayTo'] = time_restr_df['dayFrom_dayTo'].astype(str)
+    time_restr_df['dayFrom_dayTo'] = time_restr_df['dayFrom_dayTo'].apply(lambda x: x.zfill(2))
+    time_restr_df['monthFrom_monthTo'] = time_restr_df['monthFrom_monthTo'].astype(str)
+    time_restr_df['monthFrom_monthTo'] = time_restr_df['monthFrom_monthTo'].apply(lambda x: x.zfill(2)) 
 
     return addt_df, output_filename, rest_df, rest_filename, time_restr_df, time_restr_filename
 
