@@ -4,7 +4,7 @@
 ##                         Environmental Zone Project                            ##
 ##                          Here Technologies (2025)                             ##
 ##                      Created by Emi Santos Tinoco - SDS2                      ##
-##                            Last Updated: 8 April 2025                         ##
+##                            Last Updated: 28 April 2025                        ##
 ##################################################################################
 
 ## Description:
@@ -642,7 +642,7 @@ def process_excel_to_csv(input_file):
 # MMT Files Processor title
 st.title("MMT Files Processor")
 
-uploaded_file = st.file_uploader("Upload Metadata (Remember to always sort your file )", type=["csv", "xlsx", "xls"])
+uploaded_file = st.file_uploader("Upload Metadata (Remember to always sort your file )", type=["csv"])
 
 #  Buttons for processing files
 if uploaded_file and st.button("Process File"):
