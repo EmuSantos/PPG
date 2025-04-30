@@ -13,9 +13,11 @@ Pico y Placa Generator is a tool created and developed in Python that streamline
 
 🔧 Installation
 Download doc file:
+  https://github.com/EmuSantos/PPG/blob/main/Installation%20and%20Used.txt
   
 ▶️ Usage
  Download doc file:
+   https://github.com/EmuSantos/PPG/blob/main/Installation%20and%20Used.txt
  
 
 ⚙️ Configuration Options
