@@ -1,10 +1,10 @@
 """
 ##################################################################################
-##                      Pico y Placa Generator (PPG)                             ##
+##                      Pico y Placa Generator (PPG) LDO Zone                    ##
 ##                         Environmental Zone Project                            ##
 ##                          Here Technologies (2025)                             ##
 ##                      Created by Emi Santos Tinoco - SDS2                      ##
-##                            Last Updated: 28 April 2025                        ##
+##                            Last Updated: 07 Mayo 2025                         ##
 ##################################################################################
 
 ## Description:
@@ -134,7 +134,8 @@ vehicle_categories = {
     'THROUGH_TRAFFIC': 15,
     'TAXI': 14,
     'TRUCK': 6,
-    'BUS': 13
+    'BUS': 13,
+    'DELIVERY TRUCK': 5
 }
 
 # Ez_VehicleRestriction Values
@@ -142,6 +143,7 @@ EZvr_values = {
     'LICENSE PLATE NUMBER': 'LIC_PLATE',
     'OVERRIDE': 'OVERRIDE',
     'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
+    'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
     'ENVIRONMENTAL BADGE' : 'ENV_BADGE',
     'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
     'RELATIVE VEHICLE AGE': 'REL_VEH_AGE'
@@ -153,10 +155,11 @@ Ez_Tag = {
     'LicensePlateEnding': 5,
     'LicensePlateStarting': 7,
     'Max Total Weight': 8,
-    'Environmental Badge': 9,
-    'Absolute Vehicle Age': 10,
-    'Relative Vehicle Age': 11,
-    'OVERRIDE':12
+    'Min Total Weight': 9,
+    'Environmental Badge': 10,
+    'Absolute Vehicle Age': 11,
+    'Relative Vehicle Age': 12,
+    'OVERRIDE':13
 }
 
 # Insert text 
@@ -184,9 +187,9 @@ f1 = startdate
 f2 = enddate
 dayT = (f2 - f1).days
                      
-##TRUCK function
+## MAX TOTAL WEIGHT function
 if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
-    day_texts = st.text_input('Enter Weigth Value:', '')
+    day_texts = st.text_input('Enter Max Weigth Value:', '')
     selected_days = st.multiselect(
     'Select Days for Truck Restriction:',
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -196,19 +199,47 @@ if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
             for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
                 if single_date in holiday_dates:
                     continue
-                
-                weekday = single_date.strftime('%A')
-                if weekday in selected_days:
-                    VcatID = vehicle_categories['TRUCK']
-                    record = addreg(
-                        EZname, EZid, 'TRUCK', VcatID, 'Max_Total_Weight', 'MAX_TOTAL_WGHT', Ez_Tag[EZtag_selected], EZtag_selected, day_texts, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
-                    )
+                for category in selected_categories:    
+                    weekday = single_date.strftime('%A')
+                    VcatID = vehicle_categories.get(category, 'Unknown')
+                    if weekday in selected_days:
+                        
+                        record = addreg(
+                            EZname, EZid, category, VcatID, 'Max_Total_Weight', 'MAX_TOTAL_WGHT', Ez_Tag[EZtag_selected], EZtag_selected, day_texts, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
+                        )
                     
                     if record not in st.session_state.setdefault('records_weekdays', []):
                         st.session_state.records_weekdays.append(record)
             st.success("Days added to the DataFrame.")
         else:
             st.error("Please select at least one day and one value.")
+
+## MIN TOTAL WEIGHT function
+if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT':
+    day_texts = st.text_input('Enter Min Weigth Value:', '')
+    selected_days = st.multiselect(
+    'Select Days for Truck Restriction:',
+    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+)
+    if st.button("Add Truck Information"):
+        if selected_days and day_texts:
+            for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
+                if single_date in holiday_dates:
+                    continue
+                for category in selected_categories:    
+                    weekday = single_date.strftime('%A')
+                    VcatID = vehicle_categories.get(category, 'Unknown')
+                    if weekday in selected_days:
+                        
+                        record = addreg(
+                            EZname, EZid, category, VcatID, 'Min_Total_Weight', 'MIN_TOTAL_WGHT', Ez_Tag[EZtag_selected], EZtag_selected, day_texts, times, dayy(weekday), monthm(single_date), single_date.strftime("%Y%m%d")
+                        )
+                    
+                    if record not in st.session_state.setdefault('records_weekdays', []):
+                        st.session_state.records_weekdays.append(record)
+            st.success("Days added to the DataFrame.")
+        else:
+            st.error("Please select at least one day and one value.")  
 
 ## RELATIVE VEHICLE AGE function
 if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
