@@ -97,7 +97,7 @@ EZ_to_Map_Categories = {
 }
 
 # --- Inputs ---
-EZname = st.text_input('Zone Name:', 'Pico y Placa')
+EZname = st.text_input('Zone Name:', '')
 EZid = st.text_input('Zone ID:', '')
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
 EZvr_selected = st.selectbox('Vehicle Restriction Value:', list(EZvr_values.keys()))
