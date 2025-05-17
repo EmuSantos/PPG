@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
-st.title('APAC EZ Generator')
-
+st.title('APAC EZ Generator 🚗')
+st.markdown("[AMEA Zone](https://n38haaq3fgxptdjm4nqv6t.streamlit.app/) 🚀", unsafe_allow_html=True)
 # --- Session State Initialization ---
 if 'EZ_TIME_RESTR' not in st.session_state:
     st.session_state.EZ_TIME_RESTR = []
