@@ -36,7 +36,7 @@ st.markdown(
 st.markdown("---")
 st.markdown("## 🌐 Select a zone to begin:")
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns(3)
 
 with col1:
     st.markdown("### 🟢 AMER Zone")
@@ -47,6 +47,11 @@ with col2:
     st.markdown("### 🔵 APAC Zone")
     if st.button("Go to APAC Zone"):
         st.switch_page("pages/APAC Zone.py")
+
+with col3:
+    st.markdown("### 🔴 EMEA Zone")
+    if st.button("Go to EMEA Zone"):
+        st.switch_page("pages/EMEA Zone.py")
 
 # ----- Footer -----
 st.markdown("---")
