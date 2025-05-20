@@ -662,9 +662,8 @@ def process_excel_to_csv(input_file):
     addt_df = addt_df[~addt_df['EZ_KEY_NAME'].isin([8, 9, 10, 11, 12])]
     time_restr_df = time_restr_df[~time_restr_df['Restriction_id'].isin(unique_restrictions.loc[unique_restrictions['EZ_KEY_ID'] == 'OVERRIDE', 'Restriction_id'])]
     # Preserve 2-digit format in Excel (e.g. '01, '02)
-    time_restr_df['dayFrom_dayTo'] = time_restr_df['dayFrom_dayTo'].apply(lambda x: f"{str(x):02d}")
-    time_restr_df['monthFrom_monthTo'] = time_restr_df['monthFrom_monthTo'].apply(lambda x: f"{str(x):02d}")
-
+    time_restr_df['dayFrom_dayTo'] = time_restr_df['dayFrom_dayTo'].apply(lambda x: f"{int(x):02d}" if pd.notnull(x) and str(x).isdigit() else x)
+    time_restr_df['monthFrom_monthTo'] = time_restr_df['monthFrom_monthTo'].apply(lambda x: f"{int(x):02d}" if pd.notnull(x) and str(x).isdigit() else x)
 
 
     return addt_df, output_filename, rest_df, rest_filename, time_restr_df, time_restr_filename
