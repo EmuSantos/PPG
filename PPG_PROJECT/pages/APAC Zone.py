@@ -408,7 +408,7 @@ st.session_state.EZ_VEH_RESTR = unique_veh_restr_df.to_dict(orient='records')
 
 ##__________________________ENVZONE_UMRDomainValue____________________________
 
-add_new_city = st.checkbox("New City")
+add_new_city = st.checkbox("New EZ City")
 
 
 if add_new_city:
