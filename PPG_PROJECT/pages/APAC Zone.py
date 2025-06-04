@@ -47,7 +47,7 @@ def dayy(varname):
 vehicle_categories = {
     'AUTO': 3,
     'CARPOOL': 16,
-    'MOTO': 2,
+    'MOTORCYCLE': 2,
     'THROUGH_TRAFFIC': 15,
     'TAXI': 14,
     'TRUCK': 6,
