@@ -487,7 +487,7 @@ if st.button("Create APAC Metadata"):
         st.session_state.EZ_TIME_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
             'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': 'ADD MANUALLY',
+            'Restriction Id(Desc)': new_restriction_id,
             'Restriction Id(Val)': ' ',
             'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
             'Time From (23:00) - Time To(Val)': ' ',
@@ -515,7 +515,7 @@ if st.button("Create APAC Metadata"):
         st.session_state.EZ_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
             'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': 'ADD MANUALLY',
+            'Restriction Id(Desc)': new_restriction_id,
             'Restriction Id(Val)': ' ',
             'Vehicle Category(Desc)': row["vehicle_category"],
             'Vehicle Category(Val)': row["vehicle_category_id"],
