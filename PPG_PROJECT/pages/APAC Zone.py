@@ -449,7 +449,7 @@ if 'ENVZONE_CHAR' not in st.session_state:
     st.session_state.ENVZONE_CHAR = []    
 
 # Botón para crear la metadata y generar el archivo
-if st.button("🔵Create APAC Metadata"):
+if st.button("Create APAC Metadata🔵"):
 
     # Generar DataFrame base (ya deberías tener df_weekdays generado antes de esto)
     df = df_order.copy()
