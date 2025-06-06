@@ -787,29 +787,33 @@ for key in ['mmt_addt_df', 'mmt_rest_df', 'mmt_time_restr_df',
 # Si se presiona el botón, genera y guarda en session_state
 if st.button('Create MMT Files🗂️'):
 
-    # ---- ADDT ----
+        # ---- ADDT ----
     mmt_addt_data = []
-    for _, row in df_addt.iterrows():
-        mmt_addt_data.append({
-            'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
-            'OK': 'OK',
-            'ENVZONE_ID': row['ENVZONE(Val)'],
-            'Restriction_id': row['RESTRICTION_ID(Desc)'],
-            'ADDITIONAL': row['EZ_ADDT_TAG(Desc)'],
-            'EZ_KEY_NAME': row['EZ_KEY_NAMES(Val)'],
-            'EZ_VALUES': row['EZ_VALUES(Desc)'],
-            'NULL': ' ',
-            'NULL2': ' ',
-            'NULL3': ' ',
-            'NULL4': ' ',
-            'NULL5': ' ',
-            'N': 'N'
-        })
-    st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)[[
-        'EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id',
-        'ADDITIONAL', 'EZ_KEY_NAME', 'EZ_VALUES',
-        'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
-    ]]
+
+    if not df_addt.empty:
+        for _, row in df_addt.iterrows():
+            mmt_addt_data.append({
+                'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
+                'OK': 'OK',
+                'ENVZONE_ID': row['ENVZONE(Val)'],
+                'Restriction_id': row['RESTRICTION_ID(Desc)'],
+                'ADDITIONAL': row['EZ_ADDT_TAG(Desc)'],
+                'EZ_KEY_NAME': row['EZ_KEY_NAMES(Val)'],
+                'EZ_VALUES': row['EZ_VALUES(Desc)'],
+                'NULL': ' ',
+                'NULL2': ' ',
+                'NULL3': ' ',
+                'NULL4': ' ',
+                'NULL5': ' ',
+                'N': 'N'
+            })
+        st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)[[
+            'EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id',
+            'ADDITIONAL', 'EZ_KEY_NAME', 'EZ_VALUES',
+            'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
+        ]]
+    else:
+        st.session_state["mmt_addt_df"] = pd.DataFrame()  # Para evitar errores si luego se accede
 
     # ---- REST ----
     mmt_rest_data = []
