@@ -217,8 +217,8 @@ if 'records_weekdays' not in st.session_state:
 #                                                         #
 ###########################################################
 
-EZname = st.text_input('Zone Name:', 'Pico y Placa')
-EZid = st.text_input('Zone ID:', '')
+EZname = st.text_input('Zone Name:', placeholder='Write the name of the Environmental Zone')
+EZid = st.text_input('Zone ID:', placeholder='Write the id of the Environmental Zone')
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
 EZvr_selected = st.selectbox('Vehicle Restriction Value:', list(EZvr_values.keys()))
 EZtag_selected = st.selectbox('EzTag:', list(Ez_Tag.keys()))
@@ -232,10 +232,11 @@ EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
 # Nuevos inputs divididos
 EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT"])
-add_new_city = st.checkbox("New City")
+add_new_city = st.checkbox("New City🌐")
 # Start/End date to datetime
 f1 = startdate
 f2 = enddate
+
 
 # Mapea nombre de día a código
 def dayy(varname):
@@ -345,7 +346,7 @@ else:
     generate_addt = True       
        
 # Botón para generar registros
-if st.button('Generate Records'):
+if st.button('Generate Records▶️'):
     new_records = generate_records_batch()
     # Append new records to the existing list in session state
     st.session_state.records_weekdays.extend(new_records)
@@ -386,6 +387,11 @@ if st.button('Generate Records'):
         file_name=f'{EZname}_EZ_Restrictions.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+if 'df_processed_for_display' not in st.session_state:
+    st.session_state.df_processed_for_display = []
+df_order =pd.DataFrame(st.session_state.df_processed_for_display)
 
 # Display the processed DataFrame if it exists in session_state
 if "df_processed_for_display" in st.session_state:
@@ -446,7 +452,7 @@ if 'ENVZONE_CHAR' not in st.session_state:
 if st.button("Create APAC Metadata"):
 
     # Generar DataFrame base (ya deberías tener df_weekdays generado antes de esto)
-    df = df_weekdays_export.copy()
+    df = df_order.copy()
     lang = EzLang
     lang_code = Lan_Code[lang]
     restriction_counter = 0
@@ -665,39 +671,39 @@ df_website = pd.DataFrame(st.session_state.EZ_WEBSITE)
 df_polyrestr = pd.DataFrame(st.session_state.EZ_POLYRESTR)
 df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
-st.subheader ("EZ_ADDT_RESTRS_UMRDomainComboRe")
+st.subheader ("📅EZ_ADDT_RESTRS_UMRDomainComboRe")
 st.dataframe(df_addt)
 
-st.subheader("EZ_TIME_RESTR_UMRDomainComboRecord")
+st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
 st.dataframe(df_time_restr)
 
-st.subheader("EZ_RESTR_UMRDomainComboRecord")
+st.subheader("📅EZ_RESTR_UMRDomainComboRecord")
 st.dataframe(df_restr)
 
-st.subheader("EZ_VEH_RESTR_UMRDomainComboRecord")
+st.subheader("📅EZ_VEH_RESTR_UMRDomainComboRecord")
 st.dataframe(df_veh_restr)
 
-st.subheader("EZ_DESCRIPTION_UMRDomainComboRecord")
+st.subheader("📅EZ_DESCRIPTION_UMRDomainComboRecord")
 st.dataframe(df_description)
 
-st.subheader("EZ_WEBSITE_UMRDomainComboRecord")
+st.subheader("📅EZ_WEBSITE_UMRDomainComboRecord")
 st.dataframe(df_website)
 
-st.subheader("EZ_POLYRESTR_UMRDomainComboRecord")
+st.subheader("📅EZ_POLYRESTR_UMRDomainComboRecord")
 st.dataframe(df_polyrestr)
 
-st.subheader("EZ_DATES_UMRDomainComboRecord")
+st.subheader("📅EZ_DATES_UMRDomainComboRecord")
 st.dataframe(df_dates)
  
 
 
 if add_new_city:
     df_envzone_umr = pd.DataFrame(st.session_state.ENVZONE_UMR)
-    st.subheader("ENVZONE_UMRDomainValue")
+    st.subheader("📅ENVZONE_UMRDomainValue")
     st.dataframe(df_envzone_umr)
 
     df_envzone_char = pd.DataFrame(st.session_state.ENVZONE_CHAR)
-    st.subheader("ENVZONE_CHAR_UMRDomainCombo")
+    st.subheader("📅ENVZONE_CHAR_UMRDomainCombo")
     st.dataframe(df_envzone_char)
 
 # --- Save to Excel as a single file with two sheets ---
@@ -750,7 +756,7 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
 
 # Botón de descarga
 st.download_button(
-    label="Download EZ Metadata Excel File",
+    label="Download APAC Metadata Excel File⬇️",
     data=excel_buffer.getvalue(),
     file_name=filename,
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -761,3 +767,138 @@ st.download_button(
 #                       MMT FILES                         #
 #                                                         #
 ###########################################################
+from io import BytesIO
+
+def convert_df_to_csv(df):
+    output = BytesIO()
+    df.to_csv(output, index=False, header=False, encoding='utf-8')
+    output.seek(0)
+    return output.getvalue()
+
+# Inicializar session_state si no existen
+for key in ['mmt_addt_df', 'mmt_rest_df', 'mmt_time_restr_df',
+            'mmt_addt_csv', 'mmt_rest_csv', 'mmt_time_restr_csv',
+            'mmt_addt_filename', 'mmt_rest_filename', 'mmt_time_restr_filename']:
+    if key not in st.session_state:
+        st.session_state[key] = None
+
+# Si se presiona el botón, genera y guarda en session_state
+if st.button('Create MMT Files🗂️'):
+
+    # ---- ADDT ----
+    mmt_addt_data = []
+    for _, row in df_addt.iterrows():
+        mmt_addt_data.append({
+            'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
+            'OK': 'OK',
+            'ENVZONE_ID': row['ENVZONE(Val)'],
+            'Restriction_id': row['RESTRICTION_ID(Desc)'],
+            'ADDITIONAL': row['EZ_ADDT_TAG(Desc)'],
+            'EZ_KEY_NAME': row['EZ_KEY_NAMES(Val)'],
+            'EZ_VALUES': row['EZ_VALUES(Desc)'],
+            'NULL': ' ',
+            'NULL2': ' ',
+            'NULL3': ' ',
+            'NULL4': ' ',
+            'NULL5': ' ',
+            'N': 'N'
+        })
+    st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)[[
+        'EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id',
+        'ADDITIONAL', 'EZ_KEY_NAME', 'EZ_VALUES',
+        'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
+    ]]
+
+    # ---- REST ----
+    mmt_rest_data = []
+    for _, row in df_restr.iterrows():
+        mmt_rest_data.append({
+            'EZ_RESTR': 'EZ_RESTR',
+            'OK': 'OK',
+            'ENVZONE_ID': row['Environmental Zone Id(Val)'],
+            'Restriction_id': row['Restriction Id(Desc)'],
+            'vehicle_category_id': row['Vehicle Category(Val)'],
+            'EZ_KEY_ID': row['EZ Vehicle Restrictions(Val)'],
+            'LICENSE PLATE': row['Restriction Value 1(Desc)'],
+            'NULL': ' ',
+            'NULL2': ' ',
+            'NULL3': ' ',
+            'NULL4': ' ',
+            'NULL5': ' ',
+            'N': 'N'
+        })
+    st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)[[
+        'EZ_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id',
+        'vehicle_category_id', 'EZ_KEY_ID', 'LICENSE PLATE',
+        'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
+    ]]
+
+    # ---- TIME_RESTR ----
+    mmt_time_restr_data = []
+    for _, row in df_time_restr.iterrows():
+        mmt_time_restr_data.append({
+            'EZ_TIME_RESTR': 'EZ_TIME_RESTR',
+            'OK': 'OK',
+            'ENVZONE_ID': row['Environmental Zone Id(Val)'],
+            'Restriction_id': row['Restriction Id(Desc)'],
+            'timeFrom_timeTo': row['Time From (23:00) - Time To(Desc)'],
+            'dayFrom_dayTo': row['Day From - DayTo (01-07)(Desc)'],
+            'monthFrom_monthTo': row['Month From - Month To (1-12)(Desc)'],
+            'dateFrom_dateTo': 'null',
+            'NULL': ' ',
+            'NULL2': ' ',
+            'NULL3': ' ',
+            'NULL4': ' ',
+            'N': 'N'
+        })
+    st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)[[
+        'EZ_TIME_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id',
+        'timeFrom_timeTo', 'dayFrom_dayTo', 'monthFrom_monthTo',
+        'dateFrom_dateTo', 'NULL', 'NULL2', 'NULL3', 'NULL4', 'N'
+    ]]
+
+    # ---- CSVs y nombres ----
+    st.session_state["mmt_addt_csv"] = convert_df_to_csv(st.session_state["mmt_addt_df"])
+    st.session_state["mmt_rest_csv"] = convert_df_to_csv(st.session_state["mmt_rest_df"])
+    st.session_state["mmt_time_restr_csv"] = convert_df_to_csv(st.session_state["mmt_time_restr_df"])
+
+    today_str = datetime.now().strftime("%Y%m%d")
+    st.session_state["mmt_addt_filename"] = f"ADD_EZ_ADDT_REST_{EZname}_{EZid}_{today_str}.csv"
+    st.session_state["mmt_rest_filename"] = f"ADD_EZ_REST_{EZname}_{EZid}_{today_str}.csv"
+    st.session_state["mmt_time_restr_filename"] = f"ADD_EZ_TIME_RESTR_{EZname}_{EZid}_{today_str}.csv"
+
+# Mostrar siempre los resultados si existen
+if st.session_state["mmt_addt_df"] is not None:
+    st.write("### 📊 ADD_EZ_ADDT_RESTRS DataFrame:")
+    st.dataframe(st.session_state["mmt_addt_df"])
+
+if st.session_state["mmt_rest_df"] is not None:
+    st.write("### 📊 ADD_EZ_REST DataFrame:")
+    st.dataframe(st.session_state["mmt_rest_df"])
+
+if st.session_state["mmt_time_restr_df"] is not None:
+    st.write("### 📊 ADD_EZ_TIME_RESTR DataFrame:")
+    st.dataframe(st.session_state["mmt_time_restr_df"])
+
+# Mostrar siempre los botones si existen los archivos
+if st.session_state["mmt_addt_csv"]:
+    st.write("### 📥 Download files:")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.download_button("📄 Download ADD_EZ_ADDT_RESTRS",
+            data=st.session_state["mmt_addt_csv"],
+            file_name=st.session_state["mmt_addt_filename"],
+            mime="text/csv")
+
+    with col2:
+        st.download_button("📄 Download ADD_EZ_REST",
+            data=st.session_state["mmt_rest_csv"],
+            file_name=st.session_state["mmt_rest_filename"],
+            mime="text/csv")
+
+    with col3:
+        st.download_button("📄 Download ADD_EZ_TIME_RESTR",
+            data=st.session_state["mmt_time_restr_csv"],
+            file_name=st.session_state["mmt_time_restr_filename"],
+            mime="text/csv")
