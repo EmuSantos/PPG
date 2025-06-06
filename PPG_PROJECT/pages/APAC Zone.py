@@ -333,18 +333,19 @@ def generate_records_batch():
 
 if EZvr_selected == 'MIN TOTAL WEIGHT':
     min_weight = st.text_input('Enter Min Weight Value:', ' ')
-    generate_addt = False
 else:
     min_weight = ' '
-    generate_addt = True  
+  
 
 if EZvr_selected == 'MAX TOTAL WEIGHT':
     max_weight = st.text_input('Enter Max Weight Value:', ' ')
-    generate_addt = False
 else:
-    max_weight = ' '
-    generate_addt = True       
-       
+    max_weight = ' '      
+
+generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
+
+
+
 # Botón para generar registros
 if st.button('Generate Records▶️'):
     new_records = generate_records_batch()
@@ -448,8 +449,9 @@ if 'ENVZONE_UMR' not in st.session_state:
 if 'ENVZONE_CHAR' not in st.session_state:
     st.session_state.ENVZONE_CHAR = []    
 
+
 # Botón para crear la metadata y generar el archivo
-if st.button("Create APAC Metadata🔵"):
+if st.button(" Create APAC Metadata🔵"):
 
     # Generar DataFrame base (ya deberías tener df_weekdays generado antes de esto)
     df = df_order.copy()
