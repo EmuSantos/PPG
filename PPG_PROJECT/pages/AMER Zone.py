@@ -509,6 +509,14 @@ if 'EZ_ADDT_TAG' in df_weekdays.columns:
 if not df_weekdays.empty and 'EZ_KEY_NAME' in df_weekdays.columns:
     df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'] = df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'].str[:-18]
 
+
+if 'vehicle_category' in df_weekdays.columns:
+    df_weekdays.sort_values(by='vehicle_category', ascending=True, inplace=True)
+
+if 'EZ_KEY_NAME' in df_weekdays.columns:
+    df_weekdays.sort_values(by='EZ_KEY_NAME', ascending=True, inplace=True)
+
+
 st.write('### EZ MetaData:')
 st.dataframe(df_weekdays)
 
