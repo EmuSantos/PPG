@@ -459,19 +459,26 @@ if st.button(" Create APAC Metadata🔵"):
     lang_code = Lan_Code[lang]
     restriction_counter = 0
 ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
-        
+def generar_serie(n):
+        serie = []
+        for i in range(1, n + 1):
+            serie.extend([i, i])
+        return serie
+
     if generate_addt:    
-        for i, row in enumerate(df.iterrows()):
-                index, data = row
+        serie_ids = generar_serie(len(df) // 2 + len(df) % 2)
+	    
+	for i, row in enumerate(df.iterrows()):
+        index, data = row
                 # Calcular Restriction_id: cada dos registros, avanza en 1
-                restriction_id = (i // 2) + 1
+	restriction_id = (i // 2) + 1
 
-                EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
+        EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
 
-                st.session_state.EZ_ADDT.append({
+	st.session_state.EZ_ADDT.append({
                     'ENVZONE(Desc)': EZname,
                     'ENVZONE(Val)': EZid,
-                    'RESTRICTION_ID(Desc)':'ADD MANUALLY',
+                    'RESTRICTION_ID(Desc)':restriction_id,
                     'RESTRICTION_ID(Val)': ' ',
                     'EZ_ADDT_TAG(Desc)': EZ_value_type,
                     'EZ_ADDT_TAG(Val)': EZ_value_type,
