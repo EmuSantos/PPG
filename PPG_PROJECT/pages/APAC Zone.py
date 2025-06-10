@@ -467,13 +467,13 @@ if st.button(" Create APAC Metadata🔵"):
         serie_ids = generar_serie(len(df) // 2 + len(df) % 2)
 	    
 	for i, row in enumerate(df.iterrows()):
-        index, data = row
+        	index, data = row
                 # Calcular Restriction_id: cada dos registros, avanza en 1
-	restriction_id = (i // 2) + 1
+		restriction_id = (i // 2) + 1
 
-        EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
+        	EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
 
-	st.session_state.EZ_ADDT.append({
+		st.session_state.EZ_ADDT.append({
                     'ENVZONE(Desc)': EZname,
                     'ENVZONE(Val)': EZid,
                     'RESTRICTION_ID(Desc)':restriction_id,
