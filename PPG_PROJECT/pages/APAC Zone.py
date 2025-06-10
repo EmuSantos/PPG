@@ -449,7 +449,11 @@ if 'ENVZONE_UMR' not in st.session_state:
 if 'ENVZONE_CHAR' not in st.session_state:
     st.session_state.ENVZONE_CHAR = []    
 
-
+def generar_serie(n):
+        serie = []
+        for i in range(1, n + 1):
+            serie.extend([i, i])
+        return serie
 # Botón para crear la metadata y generar el archivo
 if st.button(" Create APAC Metadata🔵"):
 
@@ -459,12 +463,6 @@ if st.button(" Create APAC Metadata🔵"):
     lang_code = Lan_Code[lang]
     restriction_counter = 0
 ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
-def generar_serie(n):
-        serie = []
-        for i in range(1, n + 1):
-            serie.extend([i, i])
-        return serie
-
     if generate_addt:    
         serie_ids = generar_serie(len(df) // 2 + len(df) % 2)
 	    
