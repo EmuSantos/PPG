@@ -454,6 +454,7 @@ def generar_serie(n):
         for i in range(1, n + 1):
             serie.extend([i, i])
         return serie
+
 # Botón para crear la metadata y generar el archivo
 if st.button(" Create APAC Metadata🔵"):
 
@@ -462,18 +463,21 @@ if st.button(" Create APAC Metadata🔵"):
     lang = EzLang
     lang_code = Lan_Code[lang]
     restriction_counter = 0
+
+    
 ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
+        
     if generate_addt:    
-        serie_ids = generar_serie(len(df) // 2 + len(df) % 2)
-	    
-	for i, row in enumerate(df.iterrows()):
-        	index, data = row
+        serie_ids = generar_serie(len(df) // 2 + len(df) % 2)    
+            
+        for i, row in enumerate(df.iterrows()):
+                index, data = row
                 # Calcular Restriction_id: cada dos registros, avanza en 1
-		restriction_id = (i // 2) + 1
+                restriction_id = (i // 2) + 1
 
-        	EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
+                EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
 
-		st.session_state.EZ_ADDT.append({
+                st.session_state.EZ_ADDT.append({
                     'ENVZONE(Desc)': EZname,
                     'ENVZONE(Val)': EZid,
                     'RESTRICTION_ID(Desc)':restriction_id,
@@ -489,7 +493,7 @@ if st.button(" Create APAC Metadata🔵"):
                     'LANGTYPE(Desc)': 'null',
                     'LANGTYPE(Val)': ' ',
                     'valResult': 'OK'
-                })
+                    })
 
     
 
@@ -792,7 +796,7 @@ for key in ['mmt_addt_df', 'mmt_rest_df', 'mmt_time_restr_df',
 # Si se presiona el botón, genera y guarda en session_state
 if st.button('Create MMT Files🗂️'):
 
-        # ---- ADDT ----
+    # ---- ADDT ----
     mmt_addt_data = []
 
     if not df_addt.empty:
