@@ -58,8 +58,10 @@ import pandas as pd
 import os
 from io import BytesIO
 
-# Streamlit Config
-st.title("PPG AMER 🚗")
+st.markdown(
+    '<h1 title="PPG FOREVER">EZ Metadata Creator - APAC 🚙</h1>',
+    unsafe_allow_html=True
+)
 
 # Holidays by country
 holidays_by_country = {
