@@ -5,7 +5,7 @@ import os
 from io import BytesIO
 
 
-st.title("PPG EMEA 🚐")
+st.title("EZ Metadata Creator - EMEA 🚐")
 
 # Function AddReg
 def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyname, EZval, timeft, dayft, monthft, dateft):
