@@ -59,7 +59,7 @@ import os
 from io import BytesIO
 
 st.markdown(
-    '<h1 title="PPG FOREVER">EZ Metadata Creator - APAC 🚙</h1>',
+    '<h1 title="PPG FOREVER">EZ Metadata Creator - AMER 🚗</h1>',
     unsafe_allow_html=True
 )
 
