@@ -376,7 +376,6 @@ if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT':
         else:
             st.error("Please select at least one day and one value.")
 
-
 ## RELATIVE VEHICLE AGE function
 if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
     selected_date = st.date_input('Enter Age Restriction:')  
@@ -528,34 +527,39 @@ def group_by_consecutive_weeks(dates):
 
     return weeks
 
-
-# Usar un checkbox con un key único y almacenar su estado en session_state
+# Inicializar estado
 if 'restriction_by_day' not in st.session_state:
     st.session_state.restriction_by_day = False
 
+# Checkbox principal
 restriction_by_day = st.checkbox("Restriction Day by Day", key="restriction_by_day_checkbox")
 st.session_state.restriction_by_day = restriction_by_day
 
+# Checkbox interno para solo días hábiles
+only_weekdays = False
 if st.session_state.restriction_by_day:
-    # Group dates by month
+    only_weekdays = st.checkbox("Only Weekdays (Mon-Fri)", key="only_weekdays_checkbox")
+
+# Lógica de entrada por días
+if st.session_state.restriction_by_day:
     day_count = (enddate - startdate).days + 1
     dates_by_month = {}
 
     for n in range(day_count):
         current_date = startdate + timedelta(days=n)
 
-        # Skip holidays
+        # Saltar feriados
         if current_date in holiday_dates:
             continue
 
+        # Omitir fines de semana si está activado
+        if only_weekdays and current_date.weekday() >= 5:
+            continue
+
         month_name = current_date.strftime('%B %Y')
-        
-        if month_name not in dates_by_month:
-            dates_by_month[month_name] = []
+        dates_by_month.setdefault(month_name, []).append(current_date)
 
-        dates_by_month[month_name].append(current_date)
-
-    # Display weekly input by month
+    # Mostrar input semanal por mes
     plates_per_day = {}
 
     st.write("### Enter plate numbers")
@@ -563,26 +567,25 @@ if st.session_state.restriction_by_day:
     for month, dates in dates_by_month.items():
         weeks = group_by_consecutive_weeks(dates)
 
-        with st.expander(f"📅 {month}", expanded=False):  # Collapsible month section
+        with st.expander(f"📅 {month}", expanded=False):
             for week_num, week_dates in enumerate(weeks, start=1):
                 st.write(f"**Week {week_num}**")
 
                 num_days = len(week_dates)
-                cols = st.columns(num_days)  # Columns for each day in the week
+                cols = st.columns(num_days)
 
                 for i, date in enumerate(week_dates):
                     weekday = date.strftime('%A')
                     plate_input = cols[i].text_area(
-                        f"{weekday} - {date.strftime('%d')}", 
+                        f"{weekday} - {date.strftime('%d')}",
                         key=f"{month}_{date.strftime('%d')}"
                     )
 
                     plates = [plate.strip() for plate in plate_input.split(',') if plate.strip()]
-
                     if plates:
-                        plates_per_day[date] = plates  # Records plates per day
+                        plates_per_day[date] = plates
 else:
-    plates_per_day = {}  # If it is not activated, leave plates_per_day empty
+    plates_per_day = {}
 
 
 ##---------------------------Restrictions by Day END----------------------##
@@ -1054,7 +1057,7 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             worksheet.set_column(i, i, max_len)
     if generate_addt:
         write_sheet_autofit(df_addt, 'EZ_ADDT_RESTRS_UMRDomainComboRe') 
-           
+
     write_sheet_autofit(df_time_restr, 'EZ_TIME_RESTR_UMRDomainComboRec')
     write_sheet_autofit(df_restr, 'EZ_RESTR_UMRDomainComboRecord_L')
     write_sheet_autofit(df_veh_restr, 'EZ_VEH_RESTR_UMRDomainComboReco')
