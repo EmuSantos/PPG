@@ -1052,7 +1052,9 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
         for i, col in enumerate(df.columns):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
             worksheet.set_column(i, i, max_len)
-
+    if generate_addt:
+        write_sheet_autofit(df_addt, 'EZ_ADDT_RESTRS_UMRDomainComboRe') 
+           
     write_sheet_autofit(df_time_restr, 'EZ_TIME_RESTR_UMRDomainComboRec')
     write_sheet_autofit(df_restr, 'EZ_RESTR_UMRDomainComboRecord_L')
     write_sheet_autofit(df_veh_restr, 'EZ_VEH_RESTR_UMRDomainComboReco')
