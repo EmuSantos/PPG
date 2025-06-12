@@ -5,7 +5,7 @@ import os
 from io import BytesIO
 
 # Streamlit Config
-st.title('PPG APAC 🚙')
+st.title('EZ Metadata Creator - APAC 🚙')
 
 # Holidays by country
 holidays_by_country = {
