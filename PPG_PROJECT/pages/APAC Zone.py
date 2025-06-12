@@ -660,7 +660,8 @@ if 'vehicle_category' in df_weekdays.columns:
     df_weekdays.sort_values(by='vehicle_category', ascending=True, kind='stable', inplace=True )
      
 
-st.write('### EZ MetaData:')
+st.write('## Previous Data Display :')
+st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
 st.dataframe(df_weekdays)
 
 # Generate dynamic file name
