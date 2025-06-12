@@ -1,17 +1,17 @@
 import streamlit as st
 
 # ----- Streamlit Page Configuration -----
-st.set_page_config(page_title="PPG", page_icon="🌍", layout="centered")
+st.set_page_config(page_title="EZ Metadata Generator", page_icon="🌍", layout="centered")
 
 # ----- Project Title -----
 st.markdown("""
-# 🌍 Environmental Zone Project - Pico y Placa Generator
+# 🌍 Environmental Zone Project - EZ Metadata Generator
 #### A tool for creating vehicle restriction metadata
 """)
 
 # ----- Project Description -----
 st.markdown("""
-The **PPG** helps cities and mobility platforms define and export vehicle restriction rules.
+The **EZ Metadata Generator** helps cities and mobility platforms define and export vehicle restriction rules.
 
 Main features include:
 
