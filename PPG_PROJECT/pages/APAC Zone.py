@@ -79,12 +79,8 @@ Map_Veh_Categories = {
 
 EZvr_values = {
     'LICENSE PLATE NUMBER': 'LIC_PLATE',
-    'OVERRIDE': 'OVERRIDE',
     'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
     'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
-    'ENVIRONMENTAL BADGE': 'ENV_BADGE',
-    'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
-    'RELATIVE VEHICLE AGE': 'REL_VEH_AGE',
 
 }
 
@@ -95,10 +91,6 @@ Ez_Tag = {
     'Date': 1,
     'Max Total Weight': 8,
     'Min Total Weight': 9,
-    'Environmental Badge': 10,
-    'Absolute Vehicle Age': 11,
-    'Relative Vehicle Age': 12,
-    'OVERRIDE': 13
 }
 
 EzRestriction = {
@@ -698,38 +690,38 @@ df_website = pd.DataFrame(st.session_state.EZ_WEBSITE)
 df_polyrestr = pd.DataFrame(st.session_state.EZ_POLYRESTR)
 df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
-st.subheader ("📅EZ_ADDT_RESTRS_UMRDomainComboRe")
-df_addt = st.data_editor(df_addt, num_rows="dynamic")
+st.subheader("📅EZ_ADDT_RESTRS_UMRDomainComboRercord")
+df_addt = st.data_editor(df_addt, num_rows="dynamic", key="editor_addt")
 
 st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
-df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic")
+df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic", key="editor_time_restr")
 
 st.subheader("📅EZ_RESTR_UMRDomainComboRecord")
-df_restr = st.data_editor(df_restr, num_rows="dynamic")
+df_restr = st.data_editor(df_restr, num_rows="dynamic", key="editor_restr")
 
 st.subheader("📅EZ_VEH_RESTR_UMRDomainComboRecord")
-df_veh_restr = st.data_editor(df_veh_restr, num_rows="dynamic")
+df_veh_restr = st.data_editor(df_veh_restr, num_rows="dynamic", key="editor_veh_restr")
 
 st.subheader("📅EZ_DESCRIPTION_UMRDomainComboRecord")
-df_description = st.data_editor(df_description, num_rows="dynamic")
+df_description = st.data_editor(df_description, num_rows="dynamic", key="editor_description")
 
 st.subheader("📅EZ_WEBSITE_UMRDomainComboRecord")
-df_website = st.data_editor(df_website, num_rows="dynamic")
+df_website = st.data_editor(df_website, num_rows="dynamic", key="editor_website")
 
 st.subheader("📅EZ_POLYRESTR_UMRDomainComboRecord")
-df_polyrestr = st.data_editor(df_polyrestr, num_rows="dynamic")
+df_polyrestr = st.data_editor(df_polyrestr, num_rows="dynamic", key="editor_polyrestr")
 
 st.subheader("📅EZ_DATES_UMRDomainComboRecord")
-df_dates = st.data_editor(df_dates, num_rows="dynamic")
- 
+df_dates = st.data_editor(df_dates, num_rows="dynamic", key="editor_dates")
+
 if add_new_city:
     df_envzone_umr = pd.DataFrame(st.session_state.ENVZONE_UMR)
     st.subheader("📅ENVZONE_UMRDomainValue")
-    df_envzone_umr = st.data_editor(df_envzone_umr, num_rows="dynamic")
+    df_envzone_umr = st.data_editor(df_envzone_umr, num_rows="dynamic", key="editor_envzone_umr")
 
     df_envzone_char = pd.DataFrame(st.session_state.ENVZONE_CHAR)
     st.subheader("📅ENVZONE_CHAR_UMRDomainCombo")
-    df_envzone_char = st.data_editor(df_envzone_char, num_rows="dynamic")
+    df_envzone_char = st.data_editor(df_envzone_char, num_rows="dynamic", key="editor_envzone_char")
 
 # --- Save to Excel as a single file with two sheets ---
 from io import BytesIO
