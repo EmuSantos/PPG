@@ -7,27 +7,6 @@ from io import BytesIO
 # Streamlit Config
 st.title('EZ Metadata Creator - APAC 🚙')
 
-# Holidays by country
-holidays_by_country = {
-    "Philippines": "01012025, 29012025, 01042025, 09042025, 17042025, 18042025, 19042025, 01052025, 12052025, 06062025, 12062025, 21082025, 25082025, 31102025, 01112025, 30112025, 08122025, 24122025, 25122025, 30122025, 31122025", 
-    "NO HOLIDAYS":"01012024"
-    }
-
-# Select Country 
-country = st.selectbox("Select a country's public holidays:", list(holidays_by_country.keys()))
-selected_holidays = holidays_by_country[country]
-
-# Add Manually if you need it 
-manual_holidays = st.text_area(
-    "Or add holidays manually (format DDMMYYYYYYY, separated by commas):",
-    value=selected_holidays
-)
-
-# Process Holidays
-holidays = manual_holidays.replace(" ", "").split(',')
-
-# Holidays convert to datetime
-holiday_dates = [datetime.strptime(date, '%d%m%Y').date() for date in holidays]
 
 # Function AddReg 
 def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyname, EZval, timeft, dayft, monthft, dateft):
@@ -71,6 +50,7 @@ default_start = datetime(2025, 1, 1)
 default_end = datetime(2025, 12, 31)
 startdate = default_start
 enddate = default_end
+
 
 # ________________________________DICCIONARIES_________________________
 vehicle_categories = {
@@ -145,7 +125,7 @@ Lan_Code = {
     'KANNADA':'KAN',
     'UK ENGLISH':'UKE',
     'HINDI':'HIN',
-    'INDONESIA':'IND',
+    'INDONESIAN':'IND',
     'ASSAMESE':'ASM',
     'BENGALI':'BEN',
     'GUJARATI':'GUJ',
@@ -165,7 +145,6 @@ Poly_Restr = {
     'BUSES ONLY': 4
 }
 
-# Corrected dictionary syntax for Badge_Value
 Badge_Value = {
     'DEU_GREEN_STICKER': 'DEU_GREEN_STICKER',
     'DEU_RED_STICKER': 'DEU_RED_STICKER',
@@ -230,12 +209,19 @@ EZ_CatFeature = {
     'FEATURE POINT':'F'
 }
 
+
+
+if 'records_weekdays' not in st.session_state:
+    st.session_state.records_weekdays = []
+
+if 'df_processed_for_display' not in st.session_state:
+    st.session_state.df_processed_for_display = []
+
 ###########################################################################################################
 #                                                                                                         #
 #                                          INPUTS & DATA DISPLAY                                          #
 #                                                                                                         #
 ###########################################################################################################
-
 EZname = st.text_input('Zone Name:', placeholder='Write the name of the Environmental Zone')
 EZid = st.text_input('Zone ID:', placeholder='Write the id of the Environmental Zone')
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
@@ -249,406 +235,145 @@ if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
 times = st.text_input('Time Range:', '00:00-23:59')
 EzDesc = st.text_input('Ez Description:', placeholder='Write a description of the EZ Restriction')
 EzLang = st.selectbox('Lang Description:', ['Select a language...'] + list(Lan_Code.keys()))
+    
 EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
 
-if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
-    ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-        'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "])
-        }
-add_new_city = st.checkbox("New City🌐")
+# Nuevos inputs divididos
+EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
+if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT"])
+
+if EZvr_values[EZvr_selected] in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    EzValValues = "WEIGHT"
+
+add_new_city = st.checkbox("New City🌐")
 # Start/End date to datetime
 f1 = startdate
 f2 = enddate
-    
-dayT = (f2 - f1).days
-                     
-## MAX TOTAL WEIGHT function
-if EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT':
-    day_texts = st.text_input('Enter Max Weight Value:', '')
-    selected_days = st.multiselect(
-        'Select Days for Truck Restriction:',
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    )
 
-    if st.button("Add Truck Information"):
-        if selected_days and day_texts:
-            # Codificar días seleccionados
-            day_codes = [dayy(day) for day in selected_days]
-            day_group = ",".join(sorted(day_codes))  # Ejemplo: 01,02,03
 
-            # Obtener meses del rango, ignorando feriados
-            valid_dates = [
-                single_date for single_date in (
-                    startdate + timedelta(n) for n in range((enddate - startdate).days + 1)
-                ) if single_date not in holiday_dates
-            ]
 
-            if valid_dates:
-                first_month = f"{min(valid_dates).month:02d}"
-                last_month = f"{max(valid_dates).month:02d}"
-                month_group = f"{first_month}-{last_month}"
-            else:
-                month_group = "null"
+# Mapea nombre de día a código
+def dayy(varname):
+    day_map = {
+        'Monday': '02',
+        'Tuesday': '03',
+        'Wednesday': '04',
+        'Thursday': '05',
+        'Friday': '06',
+        'Saturday': '07',
+        'Sunday': '01'
+    }
+    return day_map.get(varname, '')
 
+def generate_records_batch():
+    records = []
+
+    total_days = len(EzValDays)
+    total_vals = len(EzValValues)
+
+    if total_days == 0 or total_vals == 0:
+        return []
+
+    selected_day_codes = [dayy(day) for day in EzValDays]
+    all_days_str = ', '.join(sorted(selected_day_codes))
+
+    special_vals = ['ODD', 'EVEN', 'WEIGHT']
+    normal_vals = [v for v in EzValValues if v not in special_vals]
+    special_selected = [v for v in EzValValues if v in special_vals]
+
+    if normal_vals:
+        repeated_days = (EzValDays * ((len(normal_vals) // total_days) + 1))[:len(normal_vals)]
+        paired = zip(normal_vals, repeated_days)
+
+        for ez_value, day in paired:
             for category in selected_categories:
-                VcatID = vehicle_categories.get(category, 'Unknown')
-
                 record = addreg(
-                    EZname,
-                    EZid,
+                    EZname, EZid,
                     category,
-                    VcatID,
-                    'Max_Total_Weight',
-                    'MAX_TOTAL_WGHT',
+                    vehicle_categories.get(category, ''),
+                    EZvr_values[EZvr_selected],
                     Ez_Tag[EZtag_selected],
                     EZtag_selected,
-                    day_texts,
-                    times,
-                    day_group,
-                    month_group,
-                    'null'  # No se usa fecha específica
-                )
-
-                if record not in st.session_state.setdefault('records_weekdays', []):
-                    st.session_state.records_weekdays.append(record)
-
-            st.success("Grouped restriction added to the DataFrame.")
-        else:
-            st.error("Please select at least one day and one value.")
-
-## MIN TOTAL WEIGHT function
-if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT':
-    day_texts = st.text_input('Enter Min Weight Value:', '')
-    selected_days = st.multiselect(
-        'Select Days for Truck Restriction:',
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    )
-
-    if st.button("Add Truck Information"):
-        if selected_days and day_texts:
-            # Codificar días seleccionados
-            day_codes = [dayy(day) for day in selected_days]
-            day_group = ",".join(sorted(day_codes))  # Ejemplo: 01,02,03
-
-            # Obtener meses del rango, ignorando feriados
-            valid_dates = [
-                single_date for single_date in (
-                    startdate + timedelta(n) for n in range((enddate - startdate).days + 1)
-                ) if single_date not in holiday_dates
-            ]
-
-            if valid_dates:
-                first_month = f"{min(valid_dates).month:02d}"
-                last_month = f"{max(valid_dates).month:02d}"
-                month_group = f"{first_month}-{last_month}"
-            else:
-                month_group = "null"
-
-            for category in selected_categories:
-                VcatID = vehicle_categories.get(category, 'Unknown')
-
-                record = addreg(
-                    EZname,
-                    EZid,
-                    category,
-                    VcatID,
-                    'Min_Total_Weight',
-                    'MIN_TOTAL_WGHT',
-                    Ez_Tag[EZtag_selected],
                     EZtag_selected,
-                    day_texts,
+                    str(ez_value),
                     times,
-                    day_group,
-                    month_group,
-                    'null'  # No se usa fecha específica
+                    dayy(day),
+                    monthm(f1) + '-' + monthm(f2),
+                    f1.strftime('%Y%m%d')
                 )
+                records.append(record)
 
-                if record not in st.session_state.setdefault('records_weekdays', []):
-                    st.session_state.records_weekdays.append(record)
+    for ez_value in special_selected:
+        for category in selected_categories:
+            record = addreg(
+                EZname, EZid,
+                category,
+                vehicle_categories.get(category, ''),
+                EZvr_values[EZvr_selected],
+                Ez_Tag[EZtag_selected],
+                EZtag_selected,
+                EZtag_selected,
+                str(ez_value),
+                times,
+                all_days_str,
+                monthm(f1) + '-' + monthm(f2),
+                f1.strftime('%Y%m%d')
+            )
+            records.append(record)
 
-            st.success("Grouped restriction added to the DataFrame.")
-        else:
-            st.error("Please select at least one day and one value.")
+    return records
 
-## RELATIVE VEHICLE AGE function
-if EZvr_values[EZvr_selected] == 'REL_VEH_AGE':
-    selected_date = st.date_input('Enter Age Restriction:')  
-    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
-
-    selected_days = st.multiselect(
-        'Select Days for Relative Vehicle Age Restriction:',
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    )
-
-    if st.button("Add Relative Vehicle Age Information"):
-        if selected_days and EZval:
-            for single_date in (startdate + timedelta(n) for n in range((enddate - startdate).days + 1)):
-                if single_date in holiday_dates:
-                    continue
-                
-                weekday = single_date.strftime('%A')
-                if weekday in selected_days:
-                    ez_values = list(set([EZval]))  # Assigns date to EZ_VALUES
-                    
-                    for val in ez_values:
-                        for category in selected_categories:
-                            VcatID = vehicle_categories.get(category, 'Unknown')  
-                            record = addreg(
-                                EZname, EZid, category, VcatID, 
-                                'RELATIVE VEHICLE AGE', 'REL_VEH_AGE', 
-                                Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected,  
-                                val, times,  
-                                dayy(weekday), monthm(single_date), 
-                                single_date.strftime("%Y%m%d")
-                            )
-                            
-                            if record not in st.session_state.setdefault('records_weekdays', []):
-                                st.session_state.records_weekdays.append(record)
-
-            st.success("Days added to the DataFrame.")
-        else:
-            st.error("Please select at least one day and enter an age restriction.")
-
-## ENVIRONMENTAL BADGE function ONLY ONE RECORD PER VEHICLE
-if EZvr_values[EZvr_selected] == 'ENV_BADGE':
-    selected_date = st.date_input('Enter Age Environmental Badge:')  
-    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
-
-    selected_days = ' '
-
-    # Nuevo input para los meses
-    selected_months = st.multiselect(
-        'Select Months for Restriction:',
-        [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
-        default=[f"{i:02}" for i in range(1, 13)]  # Default: all months
-    )
-
-    if st.button("Add Environmental Badge Information"):
-        if selected_days and EZval and selected_months:
-            days_selected_count = len(selected_days)
-            day_range = ' '
-
-            sorted_months = sorted(int(month) for month in selected_months)
-            month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
-
-            date_from = startdate.strftime('%Y%m%d')
-            date_to = enddate.strftime('%Y%m%d')
-            date_range = f"{date_from}"
-            
-            if date_range.count(' ') > 1:
-                parts = date_range.split(' ')
-                date_range = f"{parts[0]}{parts[1]}"
-
-            for category in selected_categories:
-                VcatID = vehicle_categories.get(category, 'Unknown')  
-                record = addreg(
-                    EZname, EZid, category, VcatID, 
-                    'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
-                    Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected, 
-                    EZval, ' ', ' ', month_range, ' '
-                )
-
-                if record not in st.session_state.setdefault('records_weekdays', []):
-                    st.session_state.records_weekdays.append(record)
-
-            st.success("Restriction successfully added for each selected vehicle category.")
-        else:
-            st.error("Please select at least one day, one month, and enter an age restriction.")
-
-## ABSOLUTE VEHICLE AGE function ONLY ONE RECORD PER VEHICLE
-if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE':
-    selected_date = st.date_input('Enter Age Restriction:')  
-    EZval = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
-
-    selected_days = st.multiselect(
-        'Select Days for Absolute Vehicle Age Restriction:',
-        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    )
-
-    # Nuevo input para los meses
-    selected_months = st.multiselect(
-        'Select Months for Restriction:',
-        [f"{i:02}" for i in range(1, 13)],  # "01" to "12"
-        default=[f"{i:02}" for i in range(1, 13)]  # Default: all months
-    )
-
-    if st.button("Add Absolute Vehicle Age Information"):
-        if selected_days and EZval and selected_months:
-            # Determinar número de días seleccionados para dayFrom_dayTo
-            days_selected_count = len(selected_days)
-            day_range = f"0{days_selected_count}" if days_selected_count < 10 else str(days_selected_count)
-
-            # Determinar rango de meses seleccionados
-            sorted_months = sorted(int(month) for month in selected_months)
-            month_range = f"{sorted_months[0]:02}-{sorted_months[-1]:02}"
-
-            # Construir dateFrom_dateTo a partir de startdate y enddate
-            date_range = f"{startdate.strftime('%Y%m%d')}-{enddate.strftime('%Y%m%d')}"
-
-            for category in selected_categories:
-                VcatID = vehicle_categories.get(category, 'Unknown')  
-                record = addreg(
-                    EZname, EZid, category, VcatID, 
-                    'ABSOLUTE VEHICLE AGE', 'ABS_VEH_AGE',
-                    Ez_Tag.get(EZtag_selected, 'Unknown'), EZtag_selected, 
-                    EZval, times, day_range, month_range, date_range
-                )
-
-                if record not in st.session_state.setdefault('records_weekdays', []):
-                    st.session_state.records_weekdays.append(record)
-
-            st.success("Restriction successfully added for each selected vehicle category.")
-        else:
-            st.error("Please select at least one day, one month, and enter an age restriction.")
-
-##---------------------------Restrictions by Day----------------------##
-def group_by_consecutive_weeks(dates):
-    """Groups dates by consecutive weeks, even if they don't start on Monday."""
-    weeks = []
-    current_week = []
-
-    for date in dates:
-        # Append dates into weeks
-        if len(current_week) == 7 or (len(current_week) > 0 and date.weekday() == 0):
-            weeks.append(current_week)
-            current_week = []
-
-        current_week.append(date)
-
-    # Append the last week
-    if current_week:
-        weeks.append(current_week)
-
-    return weeks
-
-# Inicializar estado
-if 'restriction_by_day' not in st.session_state:
-    st.session_state.restriction_by_day = False
-
-# Checkbox principal
-restriction_by_day = st.checkbox("Restriction Day by Day", key="restriction_by_day_checkbox")
-st.session_state.restriction_by_day = restriction_by_day
-
-# Checkbox interno para solo días hábiles
-only_weekdays = False
-if st.session_state.restriction_by_day:
-    only_weekdays = st.checkbox("Only Weekdays (Mon-Fri)", key="only_weekdays_checkbox")
-
-# Lógica de entrada por días
-if st.session_state.restriction_by_day:
-    day_count = (enddate - startdate).days + 1
-    dates_by_month = {}
-
-    for n in range(day_count):
-        current_date = startdate + timedelta(days=n)
-
-        # Saltar feriados
-        if current_date in holiday_dates:
-            continue
-
-        # Omitir fines de semana si está activado
-        if only_weekdays and current_date.weekday() >= 5:
-            continue
-
-        month_name = current_date.strftime('%B %Y')
-        dates_by_month.setdefault(month_name, []).append(current_date)
-
-    # Mostrar input semanal por mes
-    plates_per_day = {}
-
-    st.write("### Enter plate numbers")
-
-    for month, dates in dates_by_month.items():
-        weeks = group_by_consecutive_weeks(dates)
-
-        with st.expander(f"📅 {month}", expanded=False):
-            for week_num, week_dates in enumerate(weeks, start=1):
-                st.write(f"**Week {week_num}**")
-
-                num_days = len(week_dates)
-                cols = st.columns(num_days)
-
-                for i, date in enumerate(week_dates):
-                    weekday = date.strftime('%A')
-                    plate_input = cols[i].text_area(
-                        f"{weekday} - {date.strftime('%d')}",
-                        key=f"{month}_{date.strftime('%d')}"
-                    )
-
-                    plates = [plate.strip() for plate in plate_input.split(',') if plate.strip()]
-                    if plates:
-                        plates_per_day[date] = plates
+if EZvr_selected == 'MIN TOTAL WEIGHT':
+    min_weight = st.text_input('Enter Min Weight Value:', ' ')
 else:
-    plates_per_day = {}
+    min_weight = ' '
 
+if EZvr_selected == 'MAX TOTAL WEIGHT':
+    max_weight = st.text_input('Enter Max Weight Value:', ' ')
+else:
+    max_weight = ' '
 
-##---------------------------Restrictions by Day END----------------------##
+generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 
-# Records Weekdays
-if 'records_weekdays' not in st.session_state:
-    st.session_state.records_weekdays = []
+if st.button('Generate Records▶️'):
+    new_records = generate_records_batch()
+    st.session_state.records_weekdays.extend(new_records)
+    st.success(f'{len(new_records)} new records generated! Total records: {len(st.session_state.records_weekdays)}')
 
-# Function to generate records for new data
-def generate_records():
-    EZvr_value = EZvr_values[EZvr_selected]
-    EZkeyid_value = Ez_Tag[EZtag_selected]
-    EZkeyname = EZvr_selected
+    df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 
-    for single_date in (f1 + timedelta(n) for n in range(dayT + 1)):
-        if single_date in holiday_dates: 
-            continue
+    if not df_weekdays.empty:
+        ez_key_order = [
+            'Date', 'LicensePlate', 'LicensePlateEnding', 'LicensePlateStarting',
+            'Max Total Weight', 'Min Total Weight', 'Environmental Badge',
+            'Absolute Vehicle Age', 'Relative Vehicle Age', 'OVERRIDE'
+        ]
+        if 'EZ_KEY_NAME' in df_weekdays.columns:
+            df_weekdays['EZ_KEY_NAME'] = pd.Categorical(df_weekdays['EZ_KEY_NAME'], categories=ez_key_order, ordered=True)
 
-        weekday = single_date.strftime('%A')
-        
-        if st.session_state.restriction_by_day and single_date in plates_per_day:
-            ez_values = plates_per_day[single_date]  #  Use day-specific values
-        else:
-            # If there are no specific values, use those of ezval (multiselect).
-            if weekday not in ezval or not ezval[weekday]:
-                continue
-            ez_values = list(set(ezval[weekday]))
+        df_weekdays['vehicle_category_rank'] = df_weekdays['vehicle_category'].apply(lambda x: (0, x) if x == 'AUTO' else (1, x))
+        df_weekdays = df_weekdays.sort_values(by=['vehicle_category_rank', 'EZ_KEY_NAME', 'dateFrom_dateTo'])
+        df_weekdays = df_weekdays.drop(columns='vehicle_category_rank')
 
-        day_ft = dayy(weekday)
-        month_ft = monthm(single_date)
+        if 'EZ_KEY_ID' in df_weekdays.columns:
+            for key_id in [10, 11, 12]:
+                mask = df_weekdays['EZ_KEY_ID'] == key_id
+                df_weekdays.loc[mask, 'dateFrom_dateTo'] = df_weekdays.loc[mask, 'dateFrom_dateTo'].str[:8]
 
-        for val in ez_values:
-            for category in selected_categories:
-                VcatID = vehicle_categories[category]
-                record = addreg(
-                    EZname, EZid, category, VcatID, EZkeyname, EZvr_value, 
-                    EZkeyid_value, EZtag_selected, val, times, day_ft, month_ft, 
-                    single_date.strftime("%Y%m%d")
-                )
-                if record not in st.session_state.records_weekdays:
-                    st.session_state.records_weekdays.append(record)
+        st.session_state.df_processed_for_display = df_weekdays
 
-# Check if all data is completed
-def datos_completos(): 
-    return EZname and EZid and EZvr_selected and EZtag_selected and times and selected_categories
+if 'df_processed_for_display' not in st.session_state:
+    st.session_state.df_processed_for_display = []
 
-# Trigger DataFrame generation
-if st.button("Generar DataFrame"):
-    if datos_completos():
-        generate_records()
-        st.success("Successfully generated records.")
-    else:
-        st.error("Please complete all data before generating the DataFrame.")
-
-# Sort the DataFrame by the EZ_ADDT_TAG column in ascending order
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
-if 'EZ_ADDT_TAG' in df_weekdays.columns:
-    df_weekdays.sort_values(by='EZ_ADDT_TAG', ascending=True, inplace=True)
 
-# ABS_VEH_AGE Date
-if not df_weekdays.empty and 'EZ_KEY_NAME' in df_weekdays.columns:
-    df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'] = df_weekdays.loc[df_weekdays['EZ_KEY_NAME'] == 10, 'dateFrom_dateTo'].str[:-18]
-
+# Exportación CSV si hay registros
+if 'records_weekdays' in st.session_state and st.session_state.records_weekdays:
+    df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
+    file_name = f"EZ_{EZname}_{EZid}_Metadata_{datetime.now().year}.csv"
+    csv = df_weekdays.to_csv(index=False, quoting=1).encode('utf-8')
 
 if 'EZ_KEY_NAME' in df_weekdays.columns:
     df_weekdays.sort_values(by='EZ_KEY_NAME', ascending=True, kind='stable', inplace=True)
@@ -660,25 +385,10 @@ if 'vehicle_category' in df_weekdays.columns:
     df_weekdays.sort_values(by='vehicle_category', ascending=True, kind='stable', inplace=True )
      
 
+# Mostrar mensaje y DataFrame
 st.write('## Previous Data Display :')
 st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
 st.dataframe(df_weekdays)
-
-# Generate dynamic file name
-#current_year = datetime.now().year  # Corrección: usar datetime directamente
-#file_name = f"EZ_{EZname}_{EZid}_Metadata_{current_year}.csv"
-
-# Export DataFrame to CSV
-#csv = df_weekdays.to_csv(index=False, quoting=1).encode('utf-8')
-
-# Download button with the dynamic file name
-#st.download_button(
-#    label="Download CSV",
-#    data=csv,
-#    file_name=file_name,
-#    mime='text/csv',
-#)      
-
 ########################################################################################################
 #                                                                                                      #
 #                                            METADATA APAC                                             #
@@ -723,7 +433,8 @@ if 'ENVZONE_CHAR' not in st.session_state:
 ##Deleted EZ_ADDT if selected MIN o MAX WEIGHT
 generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 
-
+if 'Restriction_ODDEVEN' not in st.session_state:
+    st.session_state.Restriction_ODDEVEN = 1
 
 # Botón para crear la metadata y generar el archivo
 if st.button(" Create APAC Metadata🔵"):
@@ -751,7 +462,7 @@ if st.button(" Create APAC Metadata🔵"):
     # Guardar df actualizado en session_state (opcional)
     st.session_state.df_restriction_ready = df
 
-    ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
+##__________________EZ_ADDT_UMRDomainComboRecord____________________________
 
     if generate_addt:
         for _, row in df.iterrows():
@@ -829,10 +540,10 @@ if st.button(" Create APAC Metadata🔵"):
             continue
         used_restrictions_restr.add(restriction_id)
 
-        restriction_value_desc = (
-            day_texts if EZvr_selected in ['MIN TOTAL WEIGHT', 'MAX TOTAL WEIGHT']
-            else EzRest
-        )
+        if EZvr_selected in [ 'MAX TOTAL WEIGHT']:
+            EzRest = max_weight
+        elif EZvr_selected in ['MIN TOTAL WEIGHT']:
+            EzRest = min_weight
 
         st.session_state.EZ_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
@@ -843,7 +554,7 @@ if st.button(" Create APAC Metadata🔵"):
             'Vehicle Category(Val)': row["vehicle_category_id"],
             'EZ Vehicle Restrictions(Desc)': EZvr_selected,
             'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
-            'Restriction Value 1(Desc)': restriction_value_desc,
+            'Restriction Value 1(Desc)': row['EZ_VALUES'] if EzRest == 'ODD-EVEN' else EzRest,
             'Restriction Value 1(Val)': ' ',
             'Restriction Value 2(Desc)': 'null',
             'Restriction Value 2(Val)': ' ',
@@ -867,7 +578,6 @@ if st.button(" Create APAC Metadata🔵"):
                     'valResult': 'OK'
                 })
 ##__________________EZ_DESCRIPTION_UMRDomainComboRecord____________________________
-        
     st.session_state.EZ_DESCRIPTION.append({
                     'ENVZONE(Desc)': EZname,	
                     'ENVZONE(Val)':	EZid,
@@ -876,7 +586,7 @@ if st.button(" Create APAC Metadata🔵"):
                     'EZ Description LANGCODE(Desc)': lang,	
                     'EZ Description LANGCODE(Val)': lang_code,
                     'valResult': 'OK'
-                })     
+                }) 
 ##__________________EZ_WEBSITE_UMRDomainComboRecord____________________________
 
     st.session_state.EZ_WEBSITE.append({
@@ -939,7 +649,7 @@ st.session_state.EZ_VEH_RESTR = unique_veh_restr_df.to_dict(orient='records')
 if add_new_city:
     selected_country = st.selectbox("Select Country:", list(Country_Code.keys()))
     selected_category = st.selectbox("Select EZ Category Feature:", list(EZ_CatFeature.keys()))
-    add_new_data = st.button('Add New EZ Information')
+    add_new_data = st.button('Add New City Information')
     # Evitar duplicados por EZid
     exists = any(d['Value'] == EZid for d in st.session_state.ENVZONE_UMR)
     if not exists:
@@ -989,39 +699,37 @@ df_polyrestr = pd.DataFrame(st.session_state.EZ_POLYRESTR)
 df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
 st.subheader ("📅EZ_ADDT_RESTRS_UMRDomainComboRe")
-st.dataframe(df_addt)
+df_addt = st.data_editor(df_addt, num_rows="dynamic")
 
 st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
-st.dataframe(df_time_restr)
+df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic")
 
 st.subheader("📅EZ_RESTR_UMRDomainComboRecord")
-st.dataframe(df_restr)
+df_restr = st.data_editor(df_restr, num_rows="dynamic")
 
 st.subheader("📅EZ_VEH_RESTR_UMRDomainComboRecord")
-st.dataframe(df_veh_restr)
+df_veh_restr = st.data_editor(df_veh_restr, num_rows="dynamic")
 
 st.subheader("📅EZ_DESCRIPTION_UMRDomainComboRecord")
-st.dataframe(df_description)
+df_description = st.data_editor(df_description, num_rows="dynamic")
 
 st.subheader("📅EZ_WEBSITE_UMRDomainComboRecord")
-st.dataframe(df_website)
+df_website = st.data_editor(df_website, num_rows="dynamic")
 
 st.subheader("📅EZ_POLYRESTR_UMRDomainComboRecord")
-st.dataframe(df_polyrestr)
+df_polyrestr = st.data_editor(df_polyrestr, num_rows="dynamic")
 
 st.subheader("📅EZ_DATES_UMRDomainComboRecord")
-st.dataframe(df_dates)
+df_dates = st.data_editor(df_dates, num_rows="dynamic")
  
-
-
 if add_new_city:
     df_envzone_umr = pd.DataFrame(st.session_state.ENVZONE_UMR)
     st.subheader("📅ENVZONE_UMRDomainValue")
-    st.dataframe(df_envzone_umr)
+    df_envzone_umr = st.data_editor(df_envzone_umr, num_rows="dynamic")
 
     df_envzone_char = pd.DataFrame(st.session_state.ENVZONE_CHAR)
     st.subheader("📅ENVZONE_CHAR_UMRDomainCombo")
-    st.dataframe(df_envzone_char)
+    df_envzone_char = st.data_editor(df_envzone_char, num_rows="dynamic")
 
 # --- Save to Excel as a single file with two sheets ---
 from io import BytesIO
