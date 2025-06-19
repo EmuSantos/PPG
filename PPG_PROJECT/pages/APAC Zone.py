@@ -904,7 +904,7 @@ if st.session_state["mmt_time_restr_df"] is not None:
     st.dataframe(st.session_state["mmt_time_restr_df"])
 
 # Mostrar siempre los botones si existen los archivos
-if st.session_state["mmt_addt_csv"]:
+if st.session_state["mmt_time_restr_csv"]:
     st.write("### 📥 Download files:")
     col1, col2, col3 = st.columns(3)
 
