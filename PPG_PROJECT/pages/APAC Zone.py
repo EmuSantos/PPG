@@ -79,8 +79,12 @@ Map_Veh_Categories = {
 
 EZvr_values = {
     'LICENSE PLATE NUMBER': 'LIC_PLATE',
+    'OVERRIDE': 'OVERRIDE',
     'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
     'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
+    'ENVIRONMENTAL BADGE': 'ENV_BADGE',
+    'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
+    'RELATIVE VEHICLE AGE': 'REL_VEH_AGE',
 
 }
 
@@ -90,7 +94,7 @@ Ez_Tag = {
     'LicensePlateStarting': 7,
     'Date': 1,
     'Max Total Weight': 8,
-    'Min Total Weight': 9,
+    'Min Total Weight': 9
 }
 
 EzRestriction = {
@@ -219,7 +223,9 @@ EZid = st.text_input('Zone ID:', placeholder='Write the id of the Environmental 
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
 EZvr_selected = st.selectbox('Vehicle Restriction Value:', list(EZvr_values.keys()))
 EZtag_selected = st.selectbox('EzTag:', list(Ez_Tag.keys()))
-EzRest = st.selectbox('EzRestriction:', list(EzRestriction.keys()))
+
+if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    EzRest = st.selectbox('EzRestriction:', list(EzRestriction.keys()))
 
 if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
     startdate = st.date_input('Start day:', value=default_start)
@@ -259,27 +265,100 @@ def dayy(varname):
     }
     return day_map.get(varname, '')
 
+
+
+if EZvr_selected == 'MIN TOTAL WEIGHT':
+    min_weight = st.text_input('Enter Min Weight Value:', ' ')
+else:
+    min_weight = ' '
+
+if EZvr_selected == 'MAX TOTAL WEIGHT':
+    max_weight = st.text_input('Enter Max Weight Value:', ' ')
+else:
+    max_weight = ' '
+
 def generate_records_batch():
     records = []
 
-    total_days = len(EzValDays)
-    total_vals = len(EzValValues)
-
-    if total_days == 0 or total_vals == 0:
+    # Asegura que existan categorías seleccionadas
+    if not selected_categories:
         return []
 
     selected_day_codes = [dayy(day) for day in EzValDays]
     all_days_str = ', '.join(sorted(selected_day_codes))
 
-    special_vals = ['ODD', 'EVEN', 'WEIGHT']
-    normal_vals = [v for v in EzValValues if v not in special_vals]
-    special_selected = [v for v in EzValValues if v in special_vals]
+    # Caso especial para MIN y MAX WEIGHT
+    if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT' and min_weight.strip():
+        for category in selected_categories:
+            record = addreg(
+                EZname, EZid,
+                category,
+                vehicle_categories.get(category, ''),
+                EZvr_values[EZvr_selected],
+                Ez_Tag[EZtag_selected],
+                EZtag_selected,
+                EZtag_selected,
+                str(min_weight.strip()),
+                times,
+                all_days_str,
+                monthm(f1) + '-' + monthm(f2),
+                f1.strftime('%Y%m%d')
+            )
+            records.append(record)
 
-    if normal_vals:
-        repeated_days = (EzValDays * ((len(normal_vals) // total_days) + 1))[:len(normal_vals)]
-        paired = zip(normal_vals, repeated_days)
+    elif EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT' and max_weight.strip():
+        for category in selected_categories:
+            record = addreg(
+                EZname, EZid,
+                category,
+                vehicle_categories.get(category, ''),
+                EZvr_values[EZvr_selected],
+                Ez_Tag[EZtag_selected],
+                EZtag_selected,
+                EZtag_selected,
+                str(max_weight.strip()),
+                times,
+                all_days_str,
+                monthm(f1) + '-' + monthm(f2),
+                f1.strftime('%Y%m%d')
+            )
+            records.append(record)
 
-        for ez_value, day in paired:
+    else:
+        # Valores regulares: 1-9, ODD, EVEN, STICKER, etc.
+        total_days = len(EzValDays)
+        total_vals = len(EzValValues)
+
+        if total_days == 0 or total_vals == 0:
+            return []
+
+        special_vals = ['ODD', 'EVEN', 'WEIGHT']
+        normal_vals = [v for v in EzValValues if v not in special_vals]
+        special_selected = [v for v in EzValValues if v in special_vals]
+
+        if normal_vals:
+            repeated_days = (EzValDays * ((len(normal_vals) // total_days) + 1))[:len(normal_vals)]
+            paired = zip(normal_vals, repeated_days)
+
+            for ez_value, day in paired:
+                for category in selected_categories:
+                    record = addreg(
+                        EZname, EZid,
+                        category,
+                        vehicle_categories.get(category, ''),
+                        EZvr_values[EZvr_selected],
+                        Ez_Tag[EZtag_selected],
+                        EZtag_selected,
+                        EZtag_selected,
+                        str(ez_value),
+                        times,
+                        dayy(day),
+                        monthm(f1) + '-' + monthm(f2),
+                        f1.strftime('%Y%m%d')
+                    )
+                    records.append(record)
+
+        for ez_value in special_selected:
             for category in selected_categories:
                 record = addreg(
                     EZname, EZid,
@@ -291,41 +370,13 @@ def generate_records_batch():
                     EZtag_selected,
                     str(ez_value),
                     times,
-                    dayy(day),
+                    all_days_str,
                     monthm(f1) + '-' + monthm(f2),
                     f1.strftime('%Y%m%d')
                 )
                 records.append(record)
 
-    for ez_value in special_selected:
-        for category in selected_categories:
-            record = addreg(
-                EZname, EZid,
-                category,
-                vehicle_categories.get(category, ''),
-                EZvr_values[EZvr_selected],
-                Ez_Tag[EZtag_selected],
-                EZtag_selected,
-                EZtag_selected,
-                str(ez_value),
-                times,
-                all_days_str,
-                monthm(f1) + '-' + monthm(f2),
-                f1.strftime('%Y%m%d')
-            )
-            records.append(record)
-
     return records
-
-if EZvr_selected == 'MIN TOTAL WEIGHT':
-    min_weight = st.text_input('Enter Min Weight Value:', ' ')
-else:
-    min_weight = ' '
-
-if EZvr_selected == 'MAX TOTAL WEIGHT':
-    max_weight = st.text_input('Enter Max Weight Value:', ' ')
-else:
-    max_weight = ' '
 
 generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 
@@ -904,7 +955,7 @@ if st.session_state["mmt_time_restr_df"] is not None:
     st.dataframe(st.session_state["mmt_time_restr_df"])
 
 # Mostrar siempre los botones si existen los archivos
-if st.session_state["mmt_time_restr_csv"]:
+if st.session_state["mmt_rest_csv"]:
     st.write("### 📥 Download files:")
     col1, col2, col3 = st.columns(3)
 
