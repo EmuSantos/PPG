@@ -509,7 +509,7 @@ if st.button(" Create APAC Metadata🔵"):
 
     if generate_addt:
         for _, row in df.iterrows():
-            EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
+            EZ_value_type = "IRREGULAR" if str(row["EZ_ADDT_TAG"]).strip().upper() == "DATE" else "ADDITIONAL"
 
             st.session_state.EZ_ADDT.append({
                 'ENVZONE(Desc)': EZname,
@@ -518,8 +518,8 @@ if st.button(" Create APAC Metadata🔵"):
                 'RESTRICTION_ID(Val)': ' ',
                 'EZ_ADDT_TAG(Desc)': EZ_value_type,
                 'EZ_ADDT_TAG(Val)': EZ_value_type,
-                'EZ_KEY_NAMES(Desc)': EZtag_selected,
-                'EZ_KEY_NAMES(Val)': Ez_Tag[EZtag_selected],
+                'EZ_KEY_NAMES(Desc)': row["EZ_KEY_NAME"],
+                'EZ_KEY_NAMES(Val)': row["EZ_KEY_ID"],
                 'EZ_VALUES(Desc)': row["EZ_VALUES"],
                 'EZ_VALUES(Val)': row["EZ_VALUES"],
                 'LANGCODE(Desc)': 'null',
@@ -528,7 +528,7 @@ if st.button(" Create APAC Metadata🔵"):
                 'LANGTYPE(Val)': ' ',
                 'valResult': 'OK'
             })
-    
+
 
 # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
 
