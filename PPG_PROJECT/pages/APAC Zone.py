@@ -538,38 +538,32 @@ generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 if 'Restriction_ODDEVEN' not in st.session_state:
     st.session_state.Restriction_ODDEVEN = 1
 
-# Botón para crear la metadata y generar el archivo
 if st.button(" Create APAC Metadata🔵"):
-
     df = df_weekdays.copy()
     lang = EzLang
     lang_code = Lan_Code[lang]
-
-    # Ordenar para asegurar consistencia en los valores comparados
+    
     df = df.sort_values(by=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
-
-    # Generar RESTRICTION_ID basados en cambios de grupo
+    
+    # Asignar Restriction_id
     restriction_id = 1
     df.at[0, "Restriction_id"] = restriction_id
-
     for i in range(1, len(df)):
-        if (
-            df.at[i, "vehicle_category"] != df.at[i - 1, "vehicle_category"] or
-            df.at[i, "timeFrom_timeTo"] != df.at[i - 1, "timeFrom_timeTo"] or
-            df.at[i, "dateFrom_dateTo"] != df.at[i - 1, "dateFrom_dateTo"]
-        ):
+        same_group = (
+            df.at[i, "vehicle_category"] == df.at[i - 1, "vehicle_category"] and
+            df.at[i, "timeFrom_timeTo"] == df.at[i - 1, "timeFrom_timeTo"] and
+            df.at[i, "dateFrom_dateTo"] == df.at[i - 1, "dateFrom_dateTo"]
+        )
+        if not same_group:
             restriction_id += 1
         df.at[i, "Restriction_id"] = restriction_id
 
-    # Guardar df actualizado en session_state (opcional)
     st.session_state.df_restriction_ready = df
 
-##__________________EZ_ADDT_UMRDomainComboRecord____________________________
-
+    # __________________EZ_ADDT_UMRDomainComboRecord____________________________
     if generate_addt:
         for _, row in df.iterrows():
             EZ_value_type = "IRREGULAR" if str(row["EZ_ADDT_TAG"]).strip().upper() == "DATE" else "ADDITIONAL"
-
             st.session_state.EZ_ADDT.append({
                 'ENVZONE(Desc)': EZname,
                 'ENVZONE(Val)': EZid,
@@ -587,49 +581,10 @@ if st.button(" Create APAC Metadata🔵"):
                 'LANGTYPE(Val)': ' ',
                 'valResult': 'OK'
             })
-    
-
-# __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
-
-    # Filtrar solo las columnas clave y quitar duplicados
-    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
-
-    # Extraer los Restriction_id únicos basados en la combinación clave
-    used_restrictions = set()
-    for _, row in df_time.iterrows():
-        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
-        restriction_id = df.loc[
-            (df["vehicle_category"] == key[0]) &
-            (df["timeFrom_timeTo"] == key[1]) &
-            (df["dateFrom_dateTo"] == key[2]),
-            "Restriction_id"
-        ].iloc[0]  # Tomamos el primero, porque todos los iguales tienen el mismo
-
-        if restriction_id in used_restrictions:
-            continue  # Evitamos duplicados en EZ_TIME_RESTR
-        used_restrictions.add(restriction_id)
-
-        st.session_state.EZ_TIME_RESTR.append({
-            'Environmental Zone Id(Desc)': EZname,
-            'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': restriction_id,
-            'Restriction Id(Val)': ' ',
-            'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
-            'Time From (23:00) - Time To(Val)': ' ',
-            'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
-            'Day From - DayTo (01-07)(Val)': ' ',
-            'Month From - Month To (1-12)(Desc)': row["monthFrom_monthTo"],
-            'Month From - Month To (1-12)(Val)': ' ',
-            'Date From (yyyymmdd) - Date to(Desc)': 'null' if EZvr_selected in ['MIN TOTAL WEIGHT', 'MAX TOTAL WEIGHT'] else row['dateFrom_dateTo'],
-            'Date From (yyyymmdd) - Date to(Val)': ' ',
-            'valResult': 'OK'
-        })
-
 
     # __________________EZ_RESTR_UMRDomainComboRecord___________________________
-
-    used_restrictions_restr = set()
-    for _, row in df_time.iterrows():
+    used_restrictions = set()
+    for _, row in df.iterrows():
         key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
         restriction_id = df.loc[
             (df["vehicle_category"] == key[0]) &
@@ -638,14 +593,15 @@ if st.button(" Create APAC Metadata🔵"):
             "Restriction_id"
         ].iloc[0]
 
-        if restriction_id in used_restrictions_restr:
+        if restriction_id in used_restrictions:
             continue
-        used_restrictions_restr.add(restriction_id)
+        used_restrictions.add(restriction_id)
 
-        if EZvr_selected in [ 'MAX TOTAL WEIGHT']:
-            EzRest = max_weight
-        elif EZvr_selected in ['MIN TOTAL WEIGHT']:
-            EzRest = min_weight
+        restriction_value = row['EZ_VALUES']
+        if EZvr_selected == 'MAX TOTAL WEIGHT':
+            restriction_value = max_weight
+        elif EZvr_selected == 'MIN TOTAL WEIGHT':
+            restriction_value = min_weight
 
         st.session_state.EZ_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
@@ -656,12 +612,47 @@ if st.button(" Create APAC Metadata🔵"):
             'Vehicle Category(Val)': row["vehicle_category_id"],
             'EZ Vehicle Restrictions(Desc)': EZvr_selected,
             'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
-            'Restriction Value 1(Desc)': row['EZ_VALUES'] if EzRest == 'ODD-EVEN' else EzRest,
+            'Restriction Value 1(Desc)': restriction_value,
             'Restriction Value 1(Val)': ' ',
             'Restriction Value 2(Desc)': 'null',
             'Restriction Value 2(Val)': ' ',
             'Override(Desc)': 'null',
             'Override(Val)': ' ',
+            'valResult': 'OK'
+        })
+
+    # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
+    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
+    used_restrictions = set()
+    
+    for _, row in df_time.iterrows():
+        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
+        restriction_id = df.loc[
+            (df["vehicle_category"] == key[0]) &
+            (df["timeFrom_timeTo"] == key[1]) &
+            (df["dateFrom_dateTo"] == key[2]),
+            "Restriction_id"
+        ].iloc[0]
+
+        if restriction_id in used_restrictions:
+            continue
+        used_restrictions.add(restriction_id)
+
+        month_val = 'null' if EzRest == 'UVVRP' else row["monthFrom_monthTo"]
+
+        st.session_state.EZ_TIME_RESTR.append({
+            'Environmental Zone Id(Desc)': EZname,
+            'Environmental Zone Id(Val)': EZid,
+            'Restriction Id(Desc)': restriction_id,
+            'Restriction Id(Val)': ' ',
+            'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
+            'Time From (23:00) - Time To(Val)': ' ',
+            'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
+            'Day From - DayTo (01-07)(Val)': ' ',
+            'Month From - Month To (1-12)(Desc)': month_val,
+            'Month From - Month To (1-12)(Val)': ' ',
+            'Date From (yyyymmdd) - Date to(Desc)': 'null',
+            'Date From (yyyymmdd) - Date to(Val)': ' ',
             'valResult': 'OK'
         })
 
@@ -791,9 +782,9 @@ if add_new_city:
 
 
 # --- Display DataFrames ---
-df_time_restr = pd.DataFrame(st.session_state.EZ_TIME_RESTR)
-df_restr = pd.DataFrame(st.session_state.EZ_RESTR)
 df_addt = pd.DataFrame(st.session_state.EZ_ADDT)
+df_restr = pd.DataFrame(st.session_state.EZ_RESTR)
+df_time_restr = pd.DataFrame(st.session_state.EZ_TIME_RESTR)
 df_veh_restr = pd.DataFrame(st.session_state.EZ_VEH_RESTR)
 df_description = pd.DataFrame(st.session_state.EZ_DESCRIPTION)
 df_website = pd.DataFrame(st.session_state.EZ_WEBSITE)
@@ -802,14 +793,12 @@ df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
 st.subheader("📅EZ_ADDT_RESTRS_UMRDomainComboRercord")
 df_addt = st.data_editor(df_addt, num_rows="dynamic", key="editor_addt")
-if "EZ_VALUES(Val)" in df_addt.columns:
-    df_addt = df_addt.sort_values(by="EZ_VALUES(Val)", ascending=True)
-
-st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
-df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic", key="editor_time_restr")
 
 st.subheader("📅EZ_RESTR_UMRDomainComboRecord")
 df_restr = st.data_editor(df_restr, num_rows="dynamic", key="editor_restr")
+
+st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
+df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic", key="editor_time_restr")
 
 st.subheader("📅EZ_VEH_RESTR_UMRDomainComboRecord")
 df_veh_restr = st.data_editor(df_veh_restr, num_rows="dynamic", key="editor_veh_restr")
