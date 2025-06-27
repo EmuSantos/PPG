@@ -226,6 +226,20 @@ EZtag_selected = st.selectbox('EzTag:', list(Ez_Tag.keys()))
 
 if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
     EzRest = st.selectbox('EzRestriction:', list(EzRestriction.keys()))
+else:
+    EzRest= 'LISENCE PLATE'
+
+    if EzRest != 'UVVRP' and EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+        EzValDays = st.multiselect(
+            'Days to Apply Restriction:',
+            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        )
+
+        EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT", " "])
+        
+    else:
+        EzValDays = []
+        EzValValues = []
 
 if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
     startdate = st.date_input('Start day:', value=default_start)
@@ -236,11 +250,32 @@ EzLang = st.selectbox('Lang Description:', ['Select a language...'] + list(Lan_C
     
 EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
 
-# Nuevos inputs divididos
-EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+# Nuevos inputs divididos 
+# Oculta EzValDays si se selecciona UVVRP o MAX/MIN WEIGHT
 
-if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
-    EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT"])
+if EzRest != 'UVVRP':
+    EzValDays = st.multiselect(
+        'Days to Apply Restriction:',
+        ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    )
+    if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+        EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT", " "])
+        
+else:
+    EzValValues = []
+    EzValDays =[]
+
+if  EzRest == 'UVVRP':
+    st.markdown("### 🔢 UVVRP Daily Restriction Values")
+    ezval = {
+        'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "]),
+        'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", " "])
+    }
 
 if EZvr_values[EZvr_selected] in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
     EzValValues = "WEIGHT"
@@ -287,7 +322,7 @@ def generate_records_batch():
     selected_day_codes = [dayy(day) for day in EzValDays]
     all_days_str = ', '.join(sorted(selected_day_codes))
 
-    # Caso especial para MIN y MAX WEIGHT
+        # Caso especial para MIN y MAX WEIGHT
     if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT' and min_weight.strip():
         for category in selected_categories:
             record = addreg(
@@ -305,6 +340,7 @@ def generate_records_batch():
                 f1.strftime('%Y%m%d')
             )
             records.append(record)
+        return records  # 🔴 DETIENE aquí
 
     elif EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT' and max_weight.strip():
         for category in selected_categories:
@@ -323,7 +359,30 @@ def generate_records_batch():
                 f1.strftime('%Y%m%d')
             )
             records.append(record)
-
+        return records  # 🔴 DETIENE aquí
+    
+        # Caso especial para UVVRP
+    if EzRest == 'UVVRP' and ezval:
+        for day, values in ezval.items():
+            for val in values:
+                for category in selected_categories:
+                    record = addreg(
+                        EZname, EZid,
+                        category,
+                        vehicle_categories.get(category, ''),
+                        EZvr_values[EZvr_selected],
+                        Ez_Tag[EZtag_selected],
+                        EZtag_selected,
+                        EZtag_selected,
+                        str(val),
+                        times,
+                        dayy(day),
+                        monthm(f1) + '-' + monthm(f2),
+                        f1.strftime('%Y%m%d')
+                    )
+                    records.append(record)
+        return records  # Importante para que no siga con el resto de lógica
+    
     else:
         # Valores regulares: 1-9, ODD, EVEN, STICKER, etc.
         total_days = len(EzValDays)
@@ -332,7 +391,7 @@ def generate_records_batch():
         if total_days == 0 or total_vals == 0:
             return []
 
-        special_vals = ['ODD', 'EVEN', 'WEIGHT']
+        special_vals = ['ODD', 'EVEN']
         normal_vals = [v for v in EzValValues if v not in special_vals]
         special_selected = [v for v in EzValValues if v in special_vals]
 
@@ -528,7 +587,7 @@ if st.button(" Create APAC Metadata🔵"):
                 'LANGTYPE(Val)': ' ',
                 'valResult': 'OK'
             })
-
+    
 
 # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
 
@@ -743,6 +802,8 @@ df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
 st.subheader("📅EZ_ADDT_RESTRS_UMRDomainComboRercord")
 df_addt = st.data_editor(df_addt, num_rows="dynamic", key="editor_addt")
+if "EZ_VALUES(Val)" in df_addt.columns:
+    df_addt = df_addt.sort_values(by="EZ_VALUES(Val)", ascending=True)
 
 st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
 df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic", key="editor_time_restr")
