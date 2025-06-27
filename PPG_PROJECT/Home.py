@@ -68,12 +68,12 @@ col_t1, col_t2, col_t3 = st.columns(3)
 with col_t1:
     st.markdown("### 🟢 AMER Tutorial")
     st.markdown("Basic guide to metadata creation in American zones.")
-    st.button("Open AMER Tutorial")
+    st.button("Coming Soon...")
 
 import requests
 
 st.markdown("### 🔵 APAC Tutorial")
-st.markdown("Complete walkthrough with examples for APAC restrictions.")
+st.markdown("Basic guide to metadata creation in APAC zones.")
 
 docx_url = "https://github.com/EmuSantos/PPG/raw/main/Work_Instruction_EZ_Metadata_APAC.docx"
 
@@ -93,7 +93,7 @@ except requests.exceptions.RequestException:
     # Descargar el archivo DOCX desde GitHub
     with open("https://github.com/EmuSantos/PPG/raw/main/Work_Instruction_EZ_Metadata_APAC.docx", "rb") as f:
         btn = st.download_button(
-            label="⬇️ Download APAC DOCX",
+            label="⬇️ Download APAC Work Instruction",
             data=f,
             file_name="Work_Instruction_EZ_Metadata_APAC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -102,9 +102,9 @@ except requests.exceptions.RequestException:
 # EMEA Tutorial
 with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
-    st.markdown("Special cases and configuration options for EMEA.")
+    st.markdown("Basic guide to metadata creation in EMEA zones.")
 
-    st.button("Open EMEA Tutorial")
+    st.button("Coming Soon...")
 
 
 
