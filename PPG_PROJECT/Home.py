@@ -95,7 +95,7 @@ with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
     st.markdown("Basic guide to metadata creation in EMEA zones.")
 
-    st.button("Coming Soon...")
+    st.button("Coming Soon..")
 
 
 
