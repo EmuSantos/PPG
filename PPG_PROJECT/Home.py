@@ -90,15 +90,6 @@ with col_t2:
     except requests.exceptions.RequestException:
         st.error("⚠️ Could not load the tutorial document. Please try again later.")
 
-    # Descargar el archivo DOCX desde GitHub
-    with open("https://github.com/EmuSantos/PPG/raw/main/Work_Instruction_EZ_Metadata_APAC.docx", "rb") as f:
-        btn = st.download_button(
-            label="⬇️ Download APAC Work Instruction",
-            data=f,
-            file_name="Work_Instruction_EZ_Metadata_APAC.docx",
-            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-
 # EMEA Tutorial
 with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
