@@ -53,6 +53,46 @@ with col3:
     if st.button("Go to EMEA Zone"):
         st.switch_page("pages/EMEA Zone.py")
 
+# ----- Tutorials Section -----
+st.markdown("---")
+st.markdown("## 📘 Tutorials")
+
+st.markdown("""
+Learn how to use the EZ Metadata Generator for each regional zone.  
+These tutorials will guide you step-by-step through the interface, inputs, and data export process.
+""")
+
+col_t1, col_t2, col_t3 = st.columns(3)
+
+# AMER Tutorial
+with col_t1:
+    st.markdown("### 🟢 AMER Tutorial")
+    st.markdown("Basic guide to metadata creation in American zones.")
+    st.button("Open AMER Tutorial")
+
+# APAC Tutorial
+with col_t2:
+    st.markdown("### 🔵 APAC Tutorial")
+    st.markdown("Complete walkthrough with examples for APAC restrictions.")
+
+    # Descargar el archivo DOCX desde GitHub
+    with open("https://github.com/EmuSantos/PPG/raw/main/Work_Instruction_EZ_Metadata_APAC.docx", "rb") as f:
+        btn = st.download_button(
+            label="⬇️ Download APAC DOCX",
+            data=f,
+            file_name="Work_Instruction_EZ_Metadata_APAC.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
+# EMEA Tutorial
+with col_t3:
+    st.markdown("### 🔴 EMEA Tutorial")
+    st.markdown("Special cases and configuration options for EMEA.")
+
+    st.button("Open EMEA Tutorial")
+
+
+
 # ----- Footer -----
 st.markdown("---")
 st.markdown("""
