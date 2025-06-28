@@ -4,10 +4,11 @@ import pandas as pd
 import os
 from io import BytesIO
 
-
+# Streamlit Config
 st.title("EZ Metadata Creator - EMEA 🚐")
 
-# Function AddReg
+
+# Function AddReg 
 def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyname, EZval, timeft, dayft, monthft, dateft):
     return {
         'ENVZONE_NAME': EZname,
@@ -17,8 +18,8 @@ def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyna
         'vehicle_category_id': VcatID,
         'EZ_VR_VALUES': EZvr_value,  # EZ Vehicle Restrictions
         'EZ_KEY_ID': EZkeyid_value,  # EZ_KEY_ID
-        'EZ_KEY_NAME': EZtag,
-        'EZ_ADDT_TAG': EZkeyname,
+        'EZ_ADDT_TAG': EZkeyname,   
+        'EZ_KEY_NAME': EZtag,      
         'EZ_VALUES': EZval,
         'timeFrom_timeTo': timeft,
         'dayFrom_dayTo': dayft,
@@ -28,13 +29,7 @@ def addreg(EZname, EZid, Vcat, VcatID, EZvr_value, EZkeyid_value, EZtag, EZkeyna
 
 # Convert month to 'MM' format (two digits)
 def monthm(varmonth):
-    # Ensure varmonth is a datetime object before formatting
-    if isinstance(varmonth, datetime):
-        return varmonth.strftime('%m')
-    else:
-        # Handle cases where varmonth might be a date object
-        return varmonth.strftime('%m')
-
+    return varmonth.strftime('%m')  
 
 # Convert days to 'DD-DD'
 def dayy(varname):
@@ -48,6 +43,13 @@ def dayy(varname):
         'Sunday': '01'
     }
     return day_map.get(varname, '')
+
+
+##Define dates
+default_start = datetime(2025, 1, 1)
+default_end = datetime(2025, 12, 31)
+startdate = default_start
+enddate = default_end
 
 
 # ________________________________DICCIONARIES_________________________
@@ -77,12 +79,17 @@ Map_Veh_Categories = {
 
 EZvr_values = {
     'LICENSE PLATE NUMBER': 'LIC_PLATE',
-    'OVERRIDE': 'OVERRIDE',
     'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
     'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
     'ENVIRONMENTAL BADGE': 'ENV_BADGE',
     'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
     'RELATIVE VEHICLE AGE': 'REL_VEH_AGE',
+    'EMISSION STANDARD': 'EMM_STANDARD',
+    'FUEL TYPE':'FUEL_TYPE',
+    'MAX NUMBER OF PASSENGERS':'MAX_PASSENGERS',
+    'COMMERCIAL':'COMMERCIAL',
+    'OVERRIDE':'OVERRIDE'
+
 
 }
 
@@ -93,10 +100,14 @@ Ez_Tag = {
     'Date': 1,
     'Max Total Weight': 8,
     'Min Total Weight': 9,
-    'Environmental Badge': 10,
-    'Absolute Vehicle Age': 11,
-    'Relative Vehicle Age': 12,
-    'OVERRIDE': 13
+    'Environmental Badge': 0,
+    'Absolute Vehicle Age': 0,
+    'Relative Vehicle Age': 0,
+    'Emission Standard': 0,
+    'Fuel Type': 0,
+    'Max Number of Passengers': 0,
+    'Comercial': 0,
+    'Override':0
 }
 
 EzRestriction = {
@@ -109,7 +120,7 @@ EzRestriction = {
 EZ_to_Map_Categories = {
     'AUTO': 'AUTOMOBILE',
     'CARPOOL': 'CARPOOL',
-    'MOTORCYCLE': 'MOTORCYCLE', # Changed from 'MOTO' to 'MOTORCYCLE' for consistency
+    'MOTORCYCLE': 'MOTORCYCLE',
     'THROUGH_TRAFFIC': 'THROUGH_TRAFFIC',
     'TAXI': 'TAXI',
     'TRUCK': 'TRUCK',
@@ -119,11 +130,11 @@ EZ_to_Map_Categories = {
 }
 
 Lan_Code = {
+    'ENGLISH':'ENG',
     'BULGARIAN':'BUL',
     'CATALAN':'CAT',
     'DANISH':'DAN',
     'DUTCH':'DUT',
-    'ENGLISH':'ENG',
     'FRENCH':'FRE',
     'GERMAN':'GER',
     'ITALIAN':'ITA',
@@ -143,7 +154,6 @@ Poly_Restr = {
     'BUSES ONLY': 4
 }
 
-# Corrected dictionary syntax for Badge_Value
 Badge_Value = {
     'DEU_GREEN_STICKER': 'DEU_GREEN_STICKER',
     'DEU_RED_STICKER': 'DEU_RED_STICKER',
@@ -208,30 +218,50 @@ EZ_CatFeature = {
     'FEATURE POINT':'F'
 }
 
+OverrideDesc = {
+    'LICENSE PLATE',
+    'COST',
+    'RESIDENTIALS'
+}
+
+###ACTUALIZAR EL OVERRIDE EN TODO, METADATA Y MMT
+###OCULTAR LOS ADDT 
+###ACTUALIZAR EL RELATIVE VEHICLE AGE
 if 'records_weekdays' not in st.session_state:
     st.session_state.records_weekdays = []
 
-###########################################################
-#                                                         #
-#                 INPUTS & DATA DISPLAY                   #
-#                                                         #
-###########################################################
+if 'df_processed_for_display' not in st.session_state:
+    st.session_state.df_processed_for_display = []
 
+###########################################################################################################
+#                                                                                                         #
+#                                          INPUTS & DATA DISPLAY                                          #
+#                                                                                                         #
+###########################################################################################################
 EZname = st.text_input('Zone Name:', placeholder='Write the name of the Environmental Zone')
 EZid = st.text_input('Zone ID:', placeholder='Write the id of the Environmental Zone')
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
 EZvr_selected = st.selectbox('Vehicle Restriction Value:', list(EZvr_values.keys()))
 EZtag_selected = st.selectbox('EzTag:', list(Ez_Tag.keys()))
-EzRest = st.selectbox('EzRestriction:', list(EzRestriction.keys()))
-startdate = st.date_input('Start day:', datetime(2025, 1, 1))
-enddate = st.date_input('End Day:', datetime(2025, 12, 31))
+
+
+if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    startdate = st.date_input('Start day:', value=default_start)
+    enddate = st.date_input('End Day:', value=default_end)
 times = st.text_input('Time Range:', '00:00-23:59')
 EzDesc = st.text_input('Ez Description:', placeholder='Write a description of the EZ Restriction')
 EzLang = st.selectbox('Lang Description:', ['Select a language...'] + list(Lan_Code.keys()))
+    
 EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
+
 # Nuevos inputs divididos
 EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
-EzValValues = st.multiselect('Restriction Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER", "WEIGHT"])
+
+if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    EzValValues = st.multiselect('Restriction Values:', [ "EURO 1", "EURO 2", "EURO 3", "EURO 4", "EURO 5", "EURO 6", "DISEL", "STICKER", "WEIGHT", " "])
+
+if EZvr_values[EZvr_selected] in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
+    EzValValues = "WEIGHT"
 add_new_city = st.checkbox("New City🌐")
 # Start/End date to datetime
 f1 = startdate
@@ -252,168 +282,210 @@ def dayy(varname):
     }
     return day_map.get(varname, '')
 
-# Generador de registros con lógica nueva
-def generate_records_batch():
-    records = []
-
-    total_days = len(EzValDays)
-    total_vals = len(EzValValues)
-
-    if total_days == 0 or total_vals == 0:
-        return []
-
-    # Preparar mapeo de días seleccionados
-    selected_day_codes = [dayy(day) for day in EzValDays]
-    all_days_str = ', '.join(sorted(selected_day_codes))
-
-    # Filtrar los valores especiales y los normales
-    special_vals = ['ODD', 'EVEN','WEIGHT']
-    normal_vals = [v for v in EzValValues if v not in special_vals]
-    special_selected = [v for v in EzValValues if v in special_vals]
-
-    # Procesar valores normales (uno a uno)
-    if normal_vals:
-        # Repetimos los días si hay más valores
-        repeated_days = (EzValDays * ((len(normal_vals) // total_days) + 1))[:len(normal_vals)]
-        paired = zip(normal_vals, repeated_days)
-
-        for ez_value, day in paired:
-            for category in selected_categories:
-                vehicle_category_name = category
-                vehicle_category_id = vehicle_categories.get(category, '')
-
-                EZvr_value = EZvr_values[EZvr_selected]
-                EZkeyid_value = Ez_Tag[EZtag_selected]
-                EZkeyname = EZtag_selected
-                timeft = times
-                monthft = monthm(f1) + '-' + monthm(f2)
-                dateft = f1.strftime('%Y%m%d')
-
-                EZval = str(ez_value)
-                day_code = dayy(day)
-
-                record = addreg(
-                    EZname, EZid,
-                    vehicle_category_name,
-                    vehicle_category_id,
-                    EZvr_value, EZkeyid_value,
-                    EZtag_selected, EZkeyname,
-                    EZval, timeft, day_code,
-                    monthft, dateft
-                )
-                records.append(record)
-
-    # Procesar valores especiales (ODD, EVEN)
-    for ez_value in special_selected:
-        for category in selected_categories:
-            vehicle_category_name = category
-            vehicle_category_id = vehicle_categories.get(category, '')
-
-            EZvr_value = EZvr_values[EZvr_selected]
-            EZkeyid_value = Ez_Tag[EZtag_selected]
-            EZkeyname = EZtag_selected
-            timeft = times
-            monthft = monthm(f1) + '-' + monthm(f2)
-            dateft = f1.strftime('%Y%m%d')
-
-            EZval = str(ez_value)
-
-            record = addreg(
-                EZname, EZid,
-                vehicle_category_name,
-                vehicle_category_id,
-                EZvr_value, EZkeyid_value,
-                EZtag_selected, EZkeyname,
-                EZval, timeft, all_days_str,  # aquí agrupamos los días
-                monthft, dateft
-            )
-            records.append(record)
-
-    return records
 
 
 if EZvr_selected == 'MIN TOTAL WEIGHT':
     min_weight = st.text_input('Enter Min Weight Value:', ' ')
 else:
     min_weight = ' '
-  
 
 if EZvr_selected == 'MAX TOTAL WEIGHT':
     max_weight = st.text_input('Enter Max Weight Value:', ' ')
 else:
-    max_weight = ' '      
+    max_weight = ' '
+
+def generate_records_batch():
+    records = []
+
+    # Asegura que existan categorías seleccionadas
+    if not selected_categories:
+        return []
+
+    selected_day_codes = [dayy(day) for day in EzValDays]
+    all_days_str = ', '.join(sorted(selected_day_codes))
+
+    # Caso especial para MIN y MAX WEIGHT
+    if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT' and min_weight.strip():
+        for category in selected_categories:
+            record = addreg(
+                EZname, EZid,
+                category,
+                vehicle_categories.get(category, ''),
+                EZvr_values[EZvr_selected],
+                Ez_Tag[EZtag_selected],
+                EZtag_selected,
+                EZtag_selected,
+                str(min_weight.strip()),
+                times,
+                all_days_str,
+                monthm(f1) + '-' + monthm(f2),
+                f1.strftime('%Y%m%d')
+            )
+            records.append(record)
+        return records    
+
+    elif EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT' and max_weight.strip():
+        for category in selected_categories:
+            record = addreg(
+                EZname, EZid,
+                category,
+                vehicle_categories.get(category, ''),
+                EZvr_values[EZvr_selected],
+                Ez_Tag[EZtag_selected],
+                EZtag_selected,
+                EZtag_selected,
+                str(max_weight.strip()),
+                times,
+                all_days_str,
+                monthm(f1) + '-' + monthm(f2),
+                f1.strftime('%Y%m%d')
+            )
+            records.append(record)
+        return records  # 🔴 DETIENE aquí
+
+    else:
+        # Valores regulares: 1-9, ODD, EVEN, STICKER, etc.
+        total_days = len(EzValDays)
+        total_vals = len(EzValValues)
+
+        if total_days == 0 or total_vals == 0:
+            return []
+
+        special_vals = ['ODD', 'EVEN', 'WEIGHT']
+        normal_vals = [v for v in EzValValues if v not in special_vals]
+        special_selected = [v for v in EzValValues if v in special_vals]
+
+        if normal_vals:
+            repeated_days = (EzValDays * ((len(normal_vals) // total_days) + 1))[:len(normal_vals)]
+            paired = zip(normal_vals, repeated_days)
+
+            for ez_value, day in paired:
+                for category in selected_categories:
+                    record = addreg(
+                        EZname, EZid,
+                        category,
+                        vehicle_categories.get(category, ''),
+                        EZvr_values[EZvr_selected],
+                        Ez_Tag[EZtag_selected],
+                        EZtag_selected,
+                        EZtag_selected,
+                        str(ez_value),
+                        times,
+                        all_days_str,
+                        monthm(f1) + '-' + monthm(f2),
+                        f1.strftime('%Y%m%d')
+                    )
+                    records.append(record)
+
+        for ez_value in special_selected:
+            for category in selected_categories:
+                record = addreg(
+                    EZname, EZid,
+                    category,
+                    vehicle_categories.get(category, ''),
+                    EZvr_values[EZvr_selected],
+                    Ez_Tag[EZtag_selected],
+                    EZtag_selected,
+                    EZtag_selected,
+                    str(ez_value),
+                    times,
+                    all_days_str,
+                    monthm(f1) + '-' + monthm(f2),
+                    f1.strftime('%Y%m%d')
+                )
+                records.append(record)
+    
+    return records
 
 generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 
-
-
-# Botón para generar registros
 if st.button('Generate Records▶️'):
     new_records = generate_records_batch()
-    # Append new records to the existing list in session state
     st.session_state.records_weekdays.extend(new_records)
     st.success(f'{len(new_records)} new records generated! Total records: {len(st.session_state.records_weekdays)}')
 
-    # Create DataFrame from the accumulated records
-    df = pd.DataFrame(st.session_state.records_weekdays)
+    df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 
-    # Display and process the combined DataFrame
-    if not df.empty:
-        # Define the desired order for EZ_KEY_NAME
+    if not df_weekdays.empty:
         ez_key_order = [
             'Date', 'LicensePlate', 'LicensePlateEnding', 'LicensePlateStarting',
             'Max Total Weight', 'Min Total Weight', 'Environmental Badge',
             'Absolute Vehicle Age', 'Relative Vehicle Age', 'OVERRIDE'
         ]
-        if 'EZ_KEY_NAME' in df.columns:
-            df['EZ_KEY_NAME'] = pd.Categorical(df['EZ_KEY_NAME'], categories=ez_key_order, ordered=True)
+        if 'EZ_KEY_NAME' in df_weekdays.columns:
+            df_weekdays['EZ_KEY_NAME'] = pd.Categorical(df_weekdays['EZ_KEY_NAME'], categories=ez_key_order, ordered=True)
 
-        df['vehicle_category_rank'] = df['vehicle_category'].apply(lambda x: (0, x) if x == 'AUTO' else (1, x))
-        df = df.sort_values(by=['vehicle_category_rank', 'EZ_KEY_NAME', 'dateFrom_dateTo'])
-        df = df.drop(columns='vehicle_category_rank')
+        df_weekdays['vehicle_category_rank'] = df_weekdays['vehicle_category'].apply(lambda x: (0, x) if x == 'AUTO' else (1, x))
+        df_weekdays = df_weekdays.sort_values(by=['vehicle_category_rank', 'EZ_KEY_NAME', 'dateFrom_dateTo'])
+        df_weekdays = df_weekdays.drop(columns='vehicle_category_rank')
 
-        if 'EZ_KEY_ID' in df.columns:
-            df.loc[df['EZ_KEY_ID'] == 10, 'dateFrom_dateTo'] = df.loc[df['EZ_KEY_ID'] == 10, 'dateFrom_dateTo'].str[:8]
-            df.loc[df['EZ_KEY_ID'] == 11, 'dateFrom_dateTo'] = df.loc[df['EZ_KEY_ID'] == 11, 'dateFrom_dateTo'].str[:8]
-            df.loc[df['EZ_KEY_ID'] == 12, 'dateFrom_dateTo'] = df.loc[df['EZ_KEY_ID'] == 12, 'dateFrom_dateTo'].str[:8]
-
-    st.session_state.df_processed_for_display = df
-
-    # Descargar como Excel 
-    towrite = BytesIO()
-    st.session_state.df_processed_for_display.to_excel(towrite, index=False, sheet_name='EZ_RESTRICTIONS')
-    towrite.seek(0)
-    st.download_button(
-        label="Download Excel File",
-        data=towrite,
-        file_name=f'{EZname}_EZ_Restrictions.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-
+        if 'EZ_KEY_ID' in df_weekdays.columns:
+            for key_id in [10, 11, 12]:
+                mask = df_weekdays['EZ_KEY_ID'] == key_id
+                df_weekdays.loc[mask, 'dateFrom_dateTo'] = df_weekdays.loc[mask, 'dateFrom_dateTo'].str[:8]
+        
+        st.session_state.df_processed_for_display = df_weekdays
+        
+    
+            
 
 if 'df_processed_for_display' not in st.session_state:
     st.session_state.df_processed_for_display = []
-df_order =pd.DataFrame(st.session_state.df_processed_for_display)
 
-# Display the processed DataFrame if it exists in session_state
-if "df_processed_for_display" in st.session_state:
-    st.write('## Previous Data Display :')
-    st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
-    st.dataframe(st.session_state.df_processed_for_display)
+df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 
-# Generate dynamic file name for the CSV export
-current_year = datetime.now().year
+# Exportación CSV si hay registros
 if 'records_weekdays' in st.session_state and st.session_state.records_weekdays:
-    df_weekdays_export = pd.DataFrame(st.session_state.records_weekdays)
-    file_name = f"EZ_{EZname}_{EZid}_Metadata_{current_year}.csv"
-    csv = df_weekdays_export.to_csv(index=False, quoting=1).encode('utf-8')
-    
+    df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
+    file_name = f"EZ_{EZname}_{EZid}_Metadata_{datetime.now().year}.csv"
+    csv = df_weekdays.to_csv(index=False, quoting=1).encode('utf-8')
 
-###########################################################
-#                                                         #
-#                    METADATA APAC                        #
-#                                                         #
-###########################################################
+if 'EZ_KEY_NAME' in df_weekdays.columns:
+    df_weekdays.sort_values(by='EZ_KEY_NAME', ascending=True, kind='stable', inplace=True)
+
+if 'dateFrom_dateTo' in df_weekdays.columns:
+    df_weekdays.sort_values(by='dateFrom_dateTo', ascending=True, kind='stable', inplace=True)
+
+if 'vehicle_category' in df_weekdays.columns:
+    df_weekdays.sort_values(by='vehicle_category', ascending=True, kind='stable', inplace=True )
+
+# Botones horizontales para modificar columnas específicas
+col1, col2, col3 = st.columns(3)
+null_time_pressed = col1.button("🕐 Null-Time")
+null_day_pressed = col2.button("📅 Null-Day")
+null_date_pressed = col3.button("📆 Null-Date")
+
+# Solo actuamos si hay registros y se presionó algún botón
+if (null_time_pressed or null_day_pressed or null_date_pressed) and st.session_state.records_weekdays:
+    df_original = pd.DataFrame(st.session_state.records_weekdays)
+
+    # Clonamos los registros existentes
+    df_modified = df_original.copy()
+
+    # Aplicamos los cambios según el botón presionado
+    if null_time_pressed and 'timeFrom_timeTo' in df_modified.columns:
+        df_modified['timeFrom_timeTo'] = 'null'
+    if null_day_pressed and 'dayFrom_dayTo' in df_modified.columns:
+        df_modified['dayFrom_dayTo'] = 'null'
+    if null_date_pressed and 'dateFrom_dateTo' in df_modified.columns:
+        df_modified['dateFrom_dateTo'] = 'null'
+
+    # ✅ Reemplazamos completamente los registros anteriores por los modificados
+    st.session_state.records_weekdays = df_modified.to_dict(orient='records')
+
+    st.success(f'{len(st.session_state.records_weekdays)} nullified records saved!')
+
+# Mostrar mensaje y DataFrame final
+st.write('## Previous Data Display :')
+st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
+df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
+st.dataframe(df_weekdays)
+
+########################################################################################################
+#                                                                                                      #
+#                                            METADATA APAC                                             #
+#                                                                                                      #
+########################################################################################################
 
 import pandas as pd
 import streamlit as st
@@ -450,103 +522,127 @@ if 'ENVZONE_UMR' not in st.session_state:
 if 'ENVZONE_CHAR' not in st.session_state:
     st.session_state.ENVZONE_CHAR = []    
 
-def generar_serie(n):
-        serie = []
-        for i in range(1, n + 1):
-            serie.extend([i, i])
-        return serie
+##Deleted EZ_ADDT if selected MIN o MAX WEIGHT
+generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
+
+if 'Restriction_ODDEVEN' not in st.session_state:
+    st.session_state.Restriction_ODDEVEN = 1
 
 # Botón para crear la metadata y generar el archivo
 if st.button(" Create APAC Metadata🔵"):
 
-    # Generar DataFrame base (ya deberías tener df_weekdays generado antes de esto)
-    df = df_order.copy()
+    df = df_weekdays.copy()
     lang = EzLang
     lang_code = Lan_Code[lang]
-    restriction_counter = 0
 
-    
+    # Ordenar para asegurar consistencia en los valores comparados
+    df = df.sort_values(by=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
+
+    # Generar RESTRICTION_ID basados en cambios de grupo
+    restriction_id = 1
+    df.at[0, "Restriction_id"] = restriction_id
+
+    for i in range(1, len(df)):
+        if (
+            df.at[i, "vehicle_category"] != df.at[i - 1, "vehicle_category"] or
+            df.at[i, "timeFrom_timeTo"] != df.at[i - 1, "timeFrom_timeTo"] or
+            df.at[i, "dateFrom_dateTo"] != df.at[i - 1, "dateFrom_dateTo"]
+        ):
+            restriction_id += 1
+        df.at[i, "Restriction_id"] = restriction_id
+
+    # Guardar df actualizado en session_state (opcional)
+    st.session_state.df_restriction_ready = df
+
 ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
-        
-    if generate_addt:    
-        serie_ids = generar_serie(len(df) // 2 + len(df) % 2)    
-            
-        for i, row in enumerate(df.iterrows()):
-                index, data = row
-                # Calcular Restriction_id: cada dos registros, avanza en 1
-                restriction_id = (i // 2) + 1
 
-                EZ_value_type = "IRREGULAR" if EZtag_selected.upper() == "DATE" else "ADDITIONAL"
+    if generate_addt:
+        for _, row in df.iterrows():
+            EZ_value_type = "IRREGULAR" if str(row["EZ_ADDT_TAG"]).strip().upper() == "DATE" else "ADDITIONAL"
 
-                st.session_state.EZ_ADDT.append({
-                    'ENVZONE(Desc)': EZname,
-                    'ENVZONE(Val)': EZid,
-                    'RESTRICTION_ID(Desc)':restriction_id,
-                    'RESTRICTION_ID(Val)': ' ',
-                    'EZ_ADDT_TAG(Desc)': EZ_value_type,
-                    'EZ_ADDT_TAG(Val)': EZ_value_type,
-                    'EZ_KEY_NAMES(Desc)': EZtag_selected,
-                    'EZ_KEY_NAMES(Val)': Ez_Tag[EZtag_selected],
-                    'EZ_VALUES(Desc)': data["EZ_VALUES"],
-                    'EZ_VALUES(Val)': data["EZ_VALUES"],
-                    'LANGCODE(Desc)': 'null',
-                    'LANGCODE(Val)': ' ',
-                    'LANGTYPE(Desc)': 'null',
-                    'LANGTYPE(Val)': ' ',
-                    'valResult': 'OK'
-                    })
-
+            st.session_state.EZ_ADDT.append({
+                'ENVZONE(Desc)': EZname,
+                'ENVZONE(Val)': EZid,
+                'RESTRICTION_ID(Desc)': row["Restriction_id"],
+                'RESTRICTION_ID(Val)': ' ',
+                'EZ_ADDT_TAG(Desc)': EZ_value_type,
+                'EZ_ADDT_TAG(Val)': EZ_value_type,
+                'EZ_KEY_NAMES(Desc)': row["EZ_KEY_NAME"],
+                'EZ_KEY_NAMES(Val)': row["EZ_KEY_ID"],
+                'EZ_VALUES(Desc)': row["EZ_VALUES"],
+                'EZ_VALUES(Val)': row["EZ_VALUES"],
+                'LANGCODE(Desc)': 'null',
+                'LANGCODE(Val)': ' ',
+                'LANGTYPE(Desc)': 'null',
+                'LANGTYPE(Val)': ' ',
+                'valResult': 'OK'
+            })
     
+    # __________________EZ_RESTR_UMRDomainComboRecord___________________________
 
-##__________________EZ_TIME_RESTR_UMRDomainComboRecord____________________________
-    df_time = df.drop_duplicates(subset=['timeFrom_timeTo', 'dayFrom_dayTo', 'vehicle_category']).reset_index(drop=True)
-    for i, row in df_time.iterrows():
-        new_restriction_id = i + 1
-        st.session_state.EZ_TIME_RESTR.append({
-            'Environmental Zone Id(Desc)': EZname,
-            'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': new_restriction_id,
-            'Restriction Id(Val)': ' ',
-            'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
-            'Time From (23:00) - Time To(Val)': ' ',
-            'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
-            'Day From - DayTo (01-07)(Val)': ' ',
-            'Month From - Month To (1-12)(Desc)': row["monthFrom_monthTo"] if EZvr_selected == 'MIN TOTAL WEIGHT' or 'MAX TOTAL WEIGHT' else 'null',
-            'Month From - Month To (1-12)(Val)': ' ',
-            'Date From (yyyymmdd) - Date to(Desc)': 'null',
-            'Date From (yyyymmdd) - Date to(Val)': ' ',
-            'valResult': 'OK'
-        })
+    used_restrictions_restr = set()
+    for _, row in df.iterrows():
 
-##__________________EZ_RESTR_UMRDomainComboRecord____________________________
-    df_restr = df.drop_duplicates(subset=['timeFrom_timeTo', 'dayFrom_dayTo', 'vehicle_category']).reset_index(drop=True)
-    for i, row in df_restr.iterrows():
-        new_restriction_id = i + 1
-        if EZvr_selected in 'MIN TOTAL WEIGHT':
-            restriction_value_desc = min_weight
-
-        elif EZvr_selected in 'MAX TOTAL WEIGHT':
-            restriction_value_desc = max_weight    
-        else:
-            restriction_value_desc = EzRest
+        if EZvr_selected in [ 'MAX TOTAL WEIGHT']:
+            EzRest = max_weight
+        elif EZvr_selected in ['MIN TOTAL WEIGHT']:
+            EzRest = min_weight
 
         st.session_state.EZ_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
             'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': new_restriction_id,
+            'Restriction Id(Desc)': row["Restriction_id"],
             'Restriction Id(Val)': ' ',
             'Vehicle Category(Desc)': row["vehicle_category"],
             'Vehicle Category(Val)': row["vehicle_category_id"],
             'EZ Vehicle Restrictions(Desc)': EZvr_selected,
             'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
-            'Restriction Value 1(Desc)': restriction_value_desc,
+            'Restriction Value 1(Desc)': row['EZ_VALUES'],
             'Restriction Value 1(Val)': ' ',
             'Restriction Value 2(Desc)': 'null',
             'Restriction Value 2(Val)': ' ',
             'Override(Desc)': 'null',
             'Override(Val)': ' ',
             'valResult': 'OK'
+        }) 
+
+# __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
+
+    # Filtrar solo las columnas clave y quitar duplicados
+    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
+
+    # Extraer los Restriction_id únicos basados en la combinación clave
+    used_restrictions = set()
+    for _, row in df_time.iterrows():
+        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
+        restriction_id = df.loc[
+            (df["vehicle_category"] == key[0]) &
+            (df["timeFrom_timeTo"] == key[1]) &
+            (df["dateFrom_dateTo"] == key[2]),
+            "Restriction_id"
+        ].iloc[0]  # Tomamos el primero, porque todos los iguales tienen el mismo
+
+        if restriction_id in used_restrictions:
+            continue  # Evitamos duplicados en EZ_TIME_RESTR
+        used_restrictions.add(restriction_id)
+
+        st.session_state.EZ_TIME_RESTR.append({
+            'Environmental Zone Id(Desc)': EZname,
+            'Environmental Zone Id(Val)': EZid,
+            'Restriction Id(Desc)': restriction_id,
+            'Restriction Id(Val)': ' ',
+            'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
+            'Time From (23:00) - Time To(Val)': ' ',
+            'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
+            'Day From - DayTo (01-07)(Val)': ' ',
+            'Month From - Month To (1-12)(Desc)': row["monthFrom_monthTo"],
+            'Month From - Month To (1-12)(Val)': ' ',
+            'Date From (yyyymmdd) - Date to(Desc)': 'null',
+            'Date From (yyyymmdd) - Date to(Val)': ' ',
+            'valResult': 'OK'
         })
+###MODIFICAR PARA QUE VERIFIQUE CON EL DF, NO CON LOS INPUTS
+
 ##__________________EZ_VEH_RESTR_UMRDomainComboRecord____________________________
     
     for vehicle in selected_categories:
@@ -562,7 +658,6 @@ if st.button(" Create APAC Metadata🔵"):
                     'valResult': 'OK'
                 })
 ##__________________EZ_DESCRIPTION_UMRDomainComboRecord____________________________
-        
     st.session_state.EZ_DESCRIPTION.append({
                     'ENVZONE(Desc)': EZname,	
                     'ENVZONE(Val)':	EZid,
@@ -571,7 +666,7 @@ if st.button(" Create APAC Metadata🔵"):
                     'EZ Description LANGCODE(Desc)': lang,	
                     'EZ Description LANGCODE(Val)': lang_code,
                     'valResult': 'OK'
-                })     
+                }) 
 ##__________________EZ_WEBSITE_UMRDomainComboRecord____________________________
 
     st.session_state.EZ_WEBSITE.append({
@@ -634,7 +729,7 @@ st.session_state.EZ_VEH_RESTR = unique_veh_restr_df.to_dict(orient='records')
 if add_new_city:
     selected_country = st.selectbox("Select Country:", list(Country_Code.keys()))
     selected_category = st.selectbox("Select EZ Category Feature:", list(EZ_CatFeature.keys()))
-    add_new_data = st.button('Add New EZ Information')
+    add_new_data = st.button('Add New City Information')
     # Evitar duplicados por EZid
     exists = any(d['Value'] == EZid for d in st.session_state.ENVZONE_UMR)
     if not exists:
@@ -674,49 +769,47 @@ if add_new_city:
 
 
 # --- Display DataFrames ---
-df_time_restr = pd.DataFrame(st.session_state.EZ_TIME_RESTR)
-df_restr = pd.DataFrame(st.session_state.EZ_RESTR)
 df_addt = pd.DataFrame(st.session_state.EZ_ADDT)
+df_restr = pd.DataFrame(st.session_state.EZ_RESTR)
+df_time_restr = pd.DataFrame(st.session_state.EZ_TIME_RESTR)
 df_veh_restr = pd.DataFrame(st.session_state.EZ_VEH_RESTR)
 df_description = pd.DataFrame(st.session_state.EZ_DESCRIPTION)
 df_website = pd.DataFrame(st.session_state.EZ_WEBSITE)
 df_polyrestr = pd.DataFrame(st.session_state.EZ_POLYRESTR)
 df_dates = pd.DataFrame(st.session_state.EZ_DATES)
 
-st.subheader ("📅EZ_ADDT_RESTRS_UMRDomainComboRe")
-st.dataframe(df_addt)
-
-st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
-st.dataframe(df_time_restr)
+st.subheader("📅EZ_ADDT_RESTRS_UMRDomainComboRercord")
+df_addt = st.data_editor(df_addt, num_rows="dynamic", key="editor_addt")
 
 st.subheader("📅EZ_RESTR_UMRDomainComboRecord")
-st.dataframe(df_restr)
+df_restr = st.data_editor(df_restr, num_rows="dynamic", key="editor_restr")
+
+st.subheader("📅EZ_TIME_RESTR_UMRDomainComboRecord")
+df_time_restr = st.data_editor(df_time_restr, num_rows="dynamic", key="editor_time_restr")
 
 st.subheader("📅EZ_VEH_RESTR_UMRDomainComboRecord")
-st.dataframe(df_veh_restr)
+df_veh_restr = st.data_editor(df_veh_restr, num_rows="dynamic", key="editor_veh_restr")
 
 st.subheader("📅EZ_DESCRIPTION_UMRDomainComboRecord")
-st.dataframe(df_description)
+df_description = st.data_editor(df_description, num_rows="dynamic", key="editor_description")
 
 st.subheader("📅EZ_WEBSITE_UMRDomainComboRecord")
-st.dataframe(df_website)
+df_website = st.data_editor(df_website, num_rows="dynamic", key="editor_website")
 
 st.subheader("📅EZ_POLYRESTR_UMRDomainComboRecord")
-st.dataframe(df_polyrestr)
+df_polyrestr = st.data_editor(df_polyrestr, num_rows="dynamic", key="editor_polyrestr")
 
 st.subheader("📅EZ_DATES_UMRDomainComboRecord")
-st.dataframe(df_dates)
- 
-
+df_dates = st.data_editor(df_dates, num_rows="dynamic", key="editor_dates")
 
 if add_new_city:
     df_envzone_umr = pd.DataFrame(st.session_state.ENVZONE_UMR)
     st.subheader("📅ENVZONE_UMRDomainValue")
-    st.dataframe(df_envzone_umr)
+    df_envzone_umr = st.data_editor(df_envzone_umr, num_rows="dynamic", key="editor_envzone_umr")
 
     df_envzone_char = pd.DataFrame(st.session_state.ENVZONE_CHAR)
     st.subheader("📅ENVZONE_CHAR_UMRDomainCombo")
-    st.dataframe(df_envzone_char)
+    df_envzone_char = st.data_editor(df_envzone_char, num_rows="dynamic", key="editor_envzone_char")
 
 # --- Save to Excel as a single file with two sheets ---
 from io import BytesIO
@@ -751,9 +844,11 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
         for i, col in enumerate(df.columns):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
             worksheet.set_column(i, i, max_len)
-
-    write_sheet_autofit(df_time_restr, 'EZ_TIME_RESTR_UMRDomainComboRec')
+    if generate_addt:
+        write_sheet_autofit(df_addt, 'EZ_ADDT_RESTRS_UMRDomainComboRe') 
+    
     write_sheet_autofit(df_restr, 'EZ_RESTR_UMRDomainComboRecord_L')
+    write_sheet_autofit(df_time_restr, 'EZ_TIME_RESTR_UMRDomainComboRec')
     write_sheet_autofit(df_veh_restr, 'EZ_VEH_RESTR_UMRDomainComboReco')
     write_sheet_autofit(df_description,'EZ_DESCRIPTION_UMRDomainComboRe')
     write_sheet_autofit(df_website,'EZ_WEBSITE_UMRDomainComboRecord')
@@ -774,11 +869,11 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-###########################################################
-#                                                         #
-#                       MMT FILES                         #
-#                                                         #
-###########################################################
+########################################################################################################
+#                                                                                                      #
+#                                                MMT FILES                                             #
+#                                                                                                      #
+########################################################################################################
 from io import BytesIO
 
 def convert_df_to_csv(df):
@@ -897,7 +992,7 @@ if st.session_state["mmt_time_restr_df"] is not None:
     st.dataframe(st.session_state["mmt_time_restr_df"])
 
 # Mostrar siempre los botones si existen los archivos
-if st.session_state["mmt_addt_csv"]:
+if st.session_state["mmt_rest_csv"]:
     st.write("### 📥 Download files:")
     col1, col2, col3 = st.columns(3)
 
