@@ -543,7 +543,7 @@ if st.button(" Create APAC Metadata🔵"):
     lang = EzLang
     lang_code = Lan_Code[lang]
     
-    df = df.sort_values(by=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
+    df = df.sort_values(by=["vehicle_category", "timeFrom_timeTo", "dayFrom_dayTo"]).reset_index(drop=True)
     
     # Asignar Restriction_id
     restriction_id = 1
@@ -552,7 +552,7 @@ if st.button(" Create APAC Metadata🔵"):
         same_group = (
             df.at[i, "vehicle_category"] == df.at[i - 1, "vehicle_category"] and
             df.at[i, "timeFrom_timeTo"] == df.at[i - 1, "timeFrom_timeTo"] and
-            df.at[i, "dateFrom_dateTo"] == df.at[i - 1, "dateFrom_dateTo"]
+            df.at[i, "dayFrom_dayTo"] == df.at[i - 1, "dayFrom_dayTo"]
         )
         if not same_group:
             restriction_id += 1
@@ -585,11 +585,11 @@ if st.button(" Create APAC Metadata🔵"):
     # __________________EZ_RESTR_UMRDomainComboRecord___________________________
     used_restrictions = set()
     for _, row in df.iterrows():
-        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
+        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dayFrom_dayTo"])
         restriction_id = df.loc[
             (df["vehicle_category"] == key[0]) &
             (df["timeFrom_timeTo"] == key[1]) &
-            (df["dateFrom_dateTo"] == key[2]),
+            (df["dayFrom_dayTo"] == key[2]),
             "Restriction_id"
         ].iloc[0]
 
@@ -612,7 +612,7 @@ if st.button(" Create APAC Metadata🔵"):
             'Vehicle Category(Val)': row["vehicle_category_id"],
             'EZ Vehicle Restrictions(Desc)': EZvr_selected,
             'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
-            'Restriction Value 1(Desc)': restriction_value,
+            'Restriction Value 1(Desc)': "UVVRP" if EzRest == 'UVVRP' else restriction_value,
             'Restriction Value 1(Val)': ' ',
             'Restriction Value 2(Desc)': 'null',
             'Restriction Value 2(Val)': ' ',
@@ -622,15 +622,15 @@ if st.button(" Create APAC Metadata🔵"):
         })
 
     # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
-    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
+    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dayFrom_dayTo"]).reset_index(drop=True)
     used_restrictions = set()
     
     for _, row in df_time.iterrows():
-        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dateFrom_dateTo"])
+        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dayFrom_dayTo"])
         restriction_id = df.loc[
             (df["vehicle_category"] == key[0]) &
             (df["timeFrom_timeTo"] == key[1]) &
-            (df["dateFrom_dateTo"] == key[2]),
+            (df["dayFrom_dayTo"] == key[2]),
             "Restriction_id"
         ].iloc[0]
 
