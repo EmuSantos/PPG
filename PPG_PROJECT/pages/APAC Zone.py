@@ -562,41 +562,41 @@ if st.button(" Create APAC Metadata🔵"):
 
     # __________________EZ_ADDT_UMRDomainComboRecord____________________________
     if generate_addt:
+        restriction_id_normal = 1  # ← Contador normal para ODD-EVEN
+        if EzRest == 'ODD-EVEN':
+            df = df.sort_values(by=["EZ_ADDT_TAG"], ascending=False).reset_index(drop=True)
         for _, row in df.iterrows():
-            EZ_value_type = "IRREGULAR" if str(row["EZ_ADDT_TAG"]).strip().upper() == "DATE" else "ADDITIONAL"
-            st.session_state.EZ_ADDT.append({
-                'ENVZONE(Desc)': EZname,
-                'ENVZONE(Val)': EZid,
-                'RESTRICTION_ID(Desc)': row["Restriction_id"],
-                'RESTRICTION_ID(Val)': ' ',
-                'EZ_ADDT_TAG(Desc)': EZ_value_type,
-                'EZ_ADDT_TAG(Val)': EZ_value_type,
-                'EZ_KEY_NAMES(Desc)': row["EZ_KEY_NAME"],
-                'EZ_KEY_NAMES(Val)': row["EZ_KEY_ID"],
-                'EZ_VALUES(Desc)': row["EZ_VALUES"],
-                'EZ_VALUES(Val)': row["EZ_VALUES"],
-                'LANGCODE(Desc)': 'null',
-                'LANGCODE(Val)': ' ',
-                'LANGTYPE(Desc)': 'null',
-                'LANGTYPE(Val)': ' ',
-                'valResult': 'OK'
-            })
+                EZ_value_type = "IRREGULAR" if str(row["EZ_ADDT_TAG"]).strip().upper() == "DATE" else "ADDITIONAL"
+                used_restriction_id = restriction_id_normal if EzRest == 'ODD-EVEN' else row["Restriction_id"]
+                
+                st.session_state.EZ_ADDT.append({
+                    'ENVZONE(Desc)': EZname,
+                    'ENVZONE(Val)': EZid,
+                    'RESTRICTION_ID(Desc)': used_restriction_id,
+                    'RESTRICTION_ID(Val)': ' ',
+                    'EZ_ADDT_TAG(Desc)': EZ_value_type,
+                    'EZ_ADDT_TAG(Val)': EZ_value_type,
+                    'EZ_KEY_NAMES(Desc)': row["EZ_KEY_NAME"],
+                    'EZ_KEY_NAMES(Val)': row["EZ_KEY_ID"],
+                    'EZ_VALUES(Desc)': row["EZ_VALUES"],
+                    'EZ_VALUES(Val)': row["EZ_VALUES"],
+                    'LANGCODE(Desc)': 'null',
+                    'LANGCODE(Val)': ' ',
+                    'LANGTYPE(Desc)': 'null',
+                    'LANGTYPE(Val)': ' ',
+                    'valResult': 'OK'
+                })
+                restriction_id_normal += 1
 
     # __________________EZ_RESTR_UMRDomainComboRecord___________________________
-    used_restrictions = set()
-    for _, row in df.iterrows():
-        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dayFrom_dayTo"])
-        restriction_id = df.loc[
-            (df["vehicle_category"] == key[0]) &
-            (df["timeFrom_timeTo"] == key[1]) &
-            (df["dayFrom_dayTo"] == key[2]),
-            "Restriction_id"
-        ].iloc[0]
+    restriction_id_normal = 1
 
-        if restriction_id in used_restrictions:
-            continue
-        used_restrictions.add(restriction_id)
+    # Aplicar condición para UVVRP
+    df_restr = df.copy()
+    if EzRest == 'UVVRP':
+        df_restr = df_restr.iloc[:len(df_restr) // 2]  # Solo mitad
 
+    for _, row in df_restr.iterrows():
         restriction_value = row['EZ_VALUES']
         if EZvr_selected == 'MAX TOTAL WEIGHT':
             restriction_value = max_weight
@@ -606,7 +606,7 @@ if st.button(" Create APAC Metadata🔵"):
         st.session_state.EZ_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
             'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': restriction_id,
+            'Restriction Id(Desc)': restriction_id_normal,
             'Restriction Id(Val)': ' ',
             'Vehicle Category(Desc)': row["vehicle_category"],
             'Vehicle Category(Val)': row["vehicle_category_id"],
@@ -620,30 +620,27 @@ if st.button(" Create APAC Metadata🔵"):
             'Override(Val)': ' ',
             'valResult': 'OK'
         })
+        restriction_id_normal += 1
 
+    
     # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
-    df_time = df.drop_duplicates(subset=["vehicle_category", "timeFrom_timeTo", "dayFrom_dayTo"]).reset_index(drop=True)
-    used_restrictions = set()
+    
+    
+    restriction_id_normal=1
+    # Aplicar condición para UVVRP
+    df_time = df.copy()
+    if EzRest == 'UVVRP':
+        df_time = df_time.iloc[:len(df_time) // 2]  # Solo mitad
+    
     
     for _, row in df_time.iterrows():
-        key = (row["vehicle_category"], row["timeFrom_timeTo"], row["dayFrom_dayTo"])
-        restriction_id = df.loc[
-            (df["vehicle_category"] == key[0]) &
-            (df["timeFrom_timeTo"] == key[1]) &
-            (df["dayFrom_dayTo"] == key[2]),
-            "Restriction_id"
-        ].iloc[0]
-
-        if restriction_id in used_restrictions:
-            continue
-        used_restrictions.add(restriction_id)
 
         month_val = 'null' if EzRest == 'UVVRP' else row["monthFrom_monthTo"]
 
         st.session_state.EZ_TIME_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
             'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': restriction_id,
+            'Restriction Id(Desc)': restriction_id_normal,
             'Restriction Id(Val)': ' ',
             'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
             'Time From (23:00) - Time To(Val)': ' ',
@@ -655,7 +652,10 @@ if st.button(" Create APAC Metadata🔵"):
             'Date From (yyyymmdd) - Date to(Val)': ' ',
             'valResult': 'OK'
         })
+       
+        restriction_id_normal += 1
 
+      
 ##__________________EZ_VEH_RESTR_UMRDomainComboRecord____________________________
     
     for vehicle in selected_categories:
@@ -778,8 +778,7 @@ if add_new_city:
                 'EZ Category(Val)': EZ_CatFeature[selected_category],
                 'valResult': 'OK'
             })
-
-
+ 
 
 # --- Display DataFrames ---
 df_addt = pd.DataFrame(st.session_state.EZ_ADDT)
