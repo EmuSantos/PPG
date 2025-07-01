@@ -591,69 +591,118 @@ if st.button(" Create APAC Metadata🔵"):
     # __________________EZ_RESTR_UMRDomainComboRecord___________________________
     restriction_id_normal = 1
 
-    # Aplicar condición para UVVRP
-    df_restr = df.copy()
     if EzRest == 'UVVRP':
-        df_restr = df_restr.iloc[:len(df_restr) // 2]  # Solo mitad
+        # Obtener categorías únicas del DataFrame
+        df_vehicle_unique = df[['vehicle_category', 'vehicle_category_id']].drop_duplicates()
 
-    for _, row in df_restr.iterrows():
-        restriction_value = row['EZ_VALUES']
-        if EZvr_selected == 'MAX TOTAL WEIGHT':
-            restriction_value = max_weight
-        elif EZvr_selected == 'MIN TOTAL WEIGHT':
-            restriction_value = min_weight
+        for _, row in df_vehicle_unique.iterrows():
+            vehicle_desc = row["vehicle_category"]
+            vehicle_val = row["vehicle_category_id"]
 
-        st.session_state.EZ_RESTR.append({
-            'Environmental Zone Id(Desc)': EZname,
-            'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': restriction_id_normal,
-            'Restriction Id(Val)': ' ',
-            'Vehicle Category(Desc)': row["vehicle_category"],
-            'Vehicle Category(Val)': row["vehicle_category_id"],
-            'EZ Vehicle Restrictions(Desc)': EZvr_selected,
-            'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
-            'Restriction Value 1(Desc)': "UVVRP" if EzRest == 'UVVRP' else restriction_value,
-            'Restriction Value 1(Val)': ' ',
-            'Restriction Value 2(Desc)': 'null',
-            'Restriction Value 2(Val)': ' ',
-            'Override(Desc)': 'null',
-            'Override(Val)': ' ',
-            'valResult': 'OK'
-        })
-        restriction_id_normal += 1
+            for day_name, values in ezval.items():
+                if not values:
+                    continue  # Saltar días sin valores
 
-    
-    # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
-    
-    
-    restriction_id_normal=1
-    # Aplicar condición para UVVRP
-    df_time = df.copy()
+                st.session_state.EZ_RESTR.append({
+                    'Environmental Zone Id(Desc)': EZname,
+                    'Environmental Zone Id(Val)': EZid,
+                    'Restriction Id(Desc)': restriction_id_normal,
+                    'Restriction Id(Val)': ' ',
+                    'Vehicle Category(Desc)': vehicle_desc,
+                    'Vehicle Category(Val)': vehicle_val,
+                    'EZ Vehicle Restrictions(Desc)': EZvr_selected,
+                    'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
+                    'Restriction Value 1(Desc)': "UVVRP",
+                    'Restriction Value 1(Val)': ' ',
+                    'Restriction Value 2(Desc)': 'null',
+                    'Restriction Value 2(Val)': ' ',
+                    'Override(Desc)': 'null',
+                    'Override(Val)': ' ',
+                    'valResult': 'OK'
+                })
+                restriction_id_normal += 1
+
+    else:
+        for _, row in df.iterrows():
+            restriction_value = row['EZ_VALUES']
+            if EZvr_selected == 'MAX TOTAL WEIGHT':
+                restriction_value = max_weight
+            elif EZvr_selected == 'MIN TOTAL WEIGHT':
+                restriction_value = min_weight
+
+            st.session_state.EZ_RESTR.append({
+                'Environmental Zone Id(Desc)': EZname,
+                'Environmental Zone Id(Val)': EZid,
+                'Restriction Id(Desc)': restriction_id_normal,
+                'Restriction Id(Val)': ' ',
+                'Vehicle Category(Desc)': row["vehicle_category"],
+                'Vehicle Category(Val)': row["vehicle_category_id"],
+                'EZ Vehicle Restrictions(Desc)': EZvr_selected,
+                'EZ Vehicle Restrictions(Val)': EZvr_values[EZvr_selected],
+                'Restriction Value 1(Desc)': restriction_value,
+                'Restriction Value 1(Val)': ' ',
+                'Restriction Value 2(Desc)': 'null',
+                'Restriction Value 2(Val)': ' ',
+                'Override(Desc)': 'null',
+                'Override(Val)': ' ',
+                'valResult': 'OK'
+            })
+            restriction_id_normal += 1
+
+   # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
+    restriction_id_normal = 1
+
     if EzRest == 'UVVRP':
-        df_time = df_time.iloc[:len(df_time) // 2]  # Solo mitad
-    
-    
-    for _, row in df_time.iterrows():
+        # Obtener categorías únicas del DataFrame
+        df_vehicle_unique = df[['vehicle_category', 'vehicle_category_id']].drop_duplicates()
 
-        month_val = 'null' if EzRest == 'UVVRP' else row["monthFrom_monthTo"]
+        for day_name, values in ezval.items():
+            if not values:
+                continue  # Solo días que tienen valores definidos
 
-        st.session_state.EZ_TIME_RESTR.append({
-            'Environmental Zone Id(Desc)': EZname,
-            'Environmental Zone Id(Val)': EZid,
-            'Restriction Id(Desc)': restriction_id_normal,
-            'Restriction Id(Val)': ' ',
-            'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
-            'Time From (23:00) - Time To(Val)': ' ',
-            'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
-            'Day From - DayTo (01-07)(Val)': ' ',
-            'Month From - Month To (1-12)(Desc)': month_val,
-            'Month From - Month To (1-12)(Val)': ' ',
-            'Date From (yyyymmdd) - Date to(Desc)': 'null',
-            'Date From (yyyymmdd) - Date to(Val)': ' ',
-            'valResult': 'OK'
-        })
-       
-        restriction_id_normal += 1
+            day_code = dayy(day_name)
+
+            for _, row in df_vehicle_unique.iterrows():
+                vehicle_desc = row["vehicle_category"]
+                vehicle_val = row["vehicle_category_id"]
+
+                st.session_state.EZ_TIME_RESTR.append({
+                    'Environmental Zone Id(Desc)': EZname,
+                    'Environmental Zone Id(Val)': EZid,
+                    'Restriction Id(Desc)': restriction_id_normal,
+                    'Restriction Id(Val)': ' ',
+                    'Time From (23:00) - Time To(Desc)': times,
+                    'Time From (23:00) - Time To(Val)': ' ',
+                    'Day From - DayTo (01-07)(Desc)': day_code,
+                    'Day From - DayTo (01-07)(Val)': ' ',
+                    'Month From - Month To (1-12)(Desc)': 'null',
+                    'Month From - Month To (1-12)(Val)': ' ',
+                    'Date From (yyyymmdd) - Date to(Desc)': 'null',
+                    'Date From (yyyymmdd) - Date to(Val)': ' ',
+                    'valResult': 'OK'
+                })
+                restriction_id_normal += 1
+
+    else:
+        for _, row in df.iterrows():
+            month_val = row["monthFrom_monthTo"] if EzRest != 'UVVRP' else 'null'
+
+            st.session_state.EZ_TIME_RESTR.append({
+                'Environmental Zone Id(Desc)': EZname,
+                'Environmental Zone Id(Val)': EZid,
+                'Restriction Id(Desc)': restriction_id_normal,
+                'Restriction Id(Val)': ' ',
+                'Time From (23:00) - Time To(Desc)': row["timeFrom_timeTo"],
+                'Time From (23:00) - Time To(Val)': ' ',
+                'Day From - DayTo (01-07)(Desc)': row["dayFrom_dayTo"],
+                'Day From - DayTo (01-07)(Val)': ' ',
+                'Month From - Month To (1-12)(Desc)': month_val,
+                'Month From - Month To (1-12)(Val)': ' ',
+                'Date From (yyyymmdd) - Date to(Desc)': 'null',
+                'Date From (yyyymmdd) - Date to(Val)': ' ',
+                'valResult': 'OK'
+            })
+            restriction_id_normal += 1
 
       
 ##__________________EZ_VEH_RESTR_UMRDomainComboRecord____________________________
