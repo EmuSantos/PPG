@@ -1004,31 +1004,37 @@ if st.button('Create MMT Files🗂️'):
     # ---- REST ----
     mmt_rest_data = []
     df = df_weekdays.copy()
-    for _, row in df_restr.iterrows():
-        for _, row2 in df.iterrows():
-            is_override = row2.get('EZ_VR_VALUES') == 'OVERRIDE'
 
-            mmt_rest_data.append({
-                'EZ_RESTR': 'EZ_RESTR',
-                'OK': 'OK',
-                'ENVZONE_ID': row['Environmental Zone Id(Val)'],
-                'Restriction_id': row['Restriction Id(Desc)'],
-                'vehicle_category_id': row['Vehicle Category(Val)'],
-                'EZ_KEY_ID': row['EZ Vehicle Restrictions(Val)'],
-                'LICENSE PLATE': row['Restriction Value 1(Desc)'],
-                'NULL': ' ',
-                'NULL2': row2['EZ_VALUES'] if is_override else ' ',
-                'NULL3': ' ',
-                'NULL4': ' ',
-                'NULL5': ' ',
-                'N': 'N'
-            })
+    # Asegúrate de que ambos DataFrames tienen el mismo número de filas si vas a sincronizarlos
+    min_len = min(len(df_restr), len(df))
+    df_restr = df_restr.head(min_len)
+    df = df.head(min_len)
+
+    for (_, row), (_, row2) in zip(df_restr.iterrows(), df.iterrows()):
+        is_override = row2.get('EZ_VR_VALUES') == 'OVERRIDE'
+
+        mmt_rest_data.append({
+            'EZ_RESTR': 'EZ_RESTR',
+            'OK': 'OK',
+            'ENVZONE_ID': row['Environmental Zone Id(Val)'],
+            'Restriction_id': row['Restriction Id(Desc)'],
+            'vehicle_category_id': row['Vehicle Category(Val)'],
+            'EZ_KEY_ID': row['EZ Vehicle Restrictions(Val)'],
+            'LICENSE PLATE': ' ' if is_override else row2['EZ_VALUES'],
+            'NULL': ' ',
+            'NULL2': row2['EZ_VALUES'] if is_override else ' ',
+            'NULL3': ' ',
+            'NULL4': ' ',
+            'NULL5': ' ',
+            'N': 'N'
+        })
+
+    # Guardar en sesión el dataframe generado
     st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)[[
         'EZ_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id',
         'vehicle_category_id', 'EZ_KEY_ID', 'LICENSE PLATE',
         'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
     ]]
-
     # ---- TIME_RESTR ----
     mmt_time_restr_data = []
     for _, row in df_time_restr.iterrows():
