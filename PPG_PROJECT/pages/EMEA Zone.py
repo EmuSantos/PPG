@@ -78,36 +78,36 @@ Map_Veh_Categories = {
 }
 
 EZvr_values = {
-    'LICENSE PLATE NUMBER': 'LIC_PLATE',
-    'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
-    'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
-    'ENVIRONMENTAL BADGE': 'ENV_BADGE',
-    'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
-    'RELATIVE VEHICLE AGE': 'REL_VEH_AGE',
     'EMISSION STANDARD': 'EMM_STANDARD',
     'FUEL TYPE':'FUEL_TYPE',
     'MAX NUMBER OF PASSENGERS':'MAX_PASSENGERS',
     'COMMERCIAL':'COMMERCIAL',
-    'OVERRIDE':'OVERRIDE'
+    'ENVIRONMENTAL BADGE': 'ENV_BADGE',
+    'ABSOLUTE VEHICLE AGE': 'ABS_VEH_AGE',
+    'RELATIVE VEHICLE AGE': 'REL_VEH_AGE',
+    'MAX TOTAL WEIGHT': 'MAX_TOTAL_WGHT',
+    'MIN TOTAL WEIGHT': 'MIN_TOTAL_WGHT',
+    'OVERRIDE':'OVERRIDE',
+    'LICENSE PLATE NUMBER': 'LIC_PLATE'
 
 
 }
 
 Ez_Tag = {
-    'LicensePlate': 3,
-    'LicensePlateEnding': 5,
-    'LicensePlateStarting': 7,
-    'Date': 1,
-    'Max Total Weight': 8,
-    'Min Total Weight': 9,
-    'Environmental Badge': 0,
-    'Absolute Vehicle Age': 0,
-    'Relative Vehicle Age': 0,
     'Emission Standard': 0,
     'Fuel Type': 0,
     'Max Number of Passengers': 0,
     'Comercial': 0,
-    'Override':0
+    'Environmental Badge': 0,
+    'Absolute Vehicle Age': 0,
+    'Relative Vehicle Age': 0,
+    'Max Total Weight': 8,
+    'Min Total Weight': 9,
+    'Override':0,
+    'LicensePlate': 3,
+    'LicensePlateEnding': 5,
+    'LicensePlateStarting': 7,
+    'Date': 1
 }
 
 EzRestriction = {
@@ -298,6 +298,9 @@ else:
 if EZvr_selected == 'RELATIVE VEHICLE AGE':
     selected_date = st.date_input('Enter Relative Vehicle Age Restriction:')
 
+if EZvr_selected == 'ABSOLUTE VEHICLE AGE':
+    selected_dateAbs = st.date_input('Enter Absolute Vehicle Age Restriction:')
+
 # Definir OverrideVal como variable de control
 OverrideVal = None
 
@@ -360,6 +363,29 @@ def generate_records_batch():
                     )
                     records.append(record)
         return records
+# Caso especial para ABSOLUTE VEHICLE AGE
+    if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE': 
+        Absolute_VehicleVal = selected_dateAbs.strftime('%d/%m/%Y')  # Formato "DD/MM/YYYY"
+
+        if EzValDays and selected_categories:
+            for category in selected_categories:
+                    record = addreg(
+                        EZname, EZid,
+                        category,
+                        vehicle_categories.get(category, ''),
+                        EZvr_values[EZvr_selected],
+                        Ez_Tag[EZtag_selected],
+                        EZvr_selected,
+                        EZtag_selected,
+                        Absolute_VehicleVal,
+                        times,
+                        all_days_str,
+                        month_range,
+                        f1.strftime('%Y%m%d')
+                    )
+                    records.append(record)
+        return records
+
 
     # MIN_WEIGHT
     if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT' and min_weight.strip():
@@ -537,7 +563,7 @@ if 'records_weekdays' in st.session_state and st.session_state.records_weekdays:
 # Mostrar mensaje y DataFrame final
 st.write('## Previous Data Display :')
 st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
-st.dataframe(df_weekdays)
+st.data_editor(df_weekdays, num_rows="dynamic", key="editor_df_weekdays")
 
 
 ########################################################################################################
