@@ -258,7 +258,7 @@ EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
 EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
 if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT', 'REL_VEH_AGE', 'OVERRIDE']:
-    EzValValues = st.multiselect('Restriction Values:', [ "EURO 1", "EURO 2", "EURO 3", "EURO 4", "EURO 5", "EURO 6", "CNG", "DISEL", "ELECTRIC", 
+    EzValValues = st.multiselect('Restriction Values:', [ "EURO 1", "EURO 2", "EURO 3", "EURO 4", "EURO 5", "EURO 6", "CNG", "DIESEL", "ELECTRIC", 
     "HYBRID", "HYDROGEN", "LNG", "LPG", "PETROL", "PLUGIN HYBRID", "2", "STICKER", "TRUE", " "])
 
 if EZvr_values[EZvr_selected] in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT']:
