@@ -72,7 +72,8 @@ holidays_by_country = {
     "Bolivia": "01012025, 22012025, 03032025, 04032025, 18042025, 01052025, 19062025, 21062025, 06082025, 02112025, 03112025, 25122025",
     "Ecuador": "01012025, 03032025, 04032025, 18042025, 01052025, 24052025, 10082025, 09102025, 02112025, 03112025, 25122025",
     "Perú": "01012025, 17042025, 18042025, 01052025, 07062025, 29062025, 23072025, 28072025, 29072025, 06082025, 30082025, 08102025, 01112025, 08122025, 09122025, 25122025",
-    "Chile": "01012025, 18042025, 19042025, 01052025, 21052025, 07062025, 20062025, 29062025, 16072025, 15082025, 20082025, 18092025, 19092025, 12102025, 31102025, 01112025, 16112025, 08122025, 14122025, 25122025, 31122025"
+    "Chile": "01012025, 18042025, 19042025, 01052025, 21052025, 07062025, 20062025, 29062025, 16072025, 15082025, 20082025, 18092025, 19092025, 12102025, 31102025, 01112025, 16112025, 08122025, 14122025, 25122025, 31122025",
+    "No Holiday":"01012024"
 }
 
 # Select Country 
@@ -164,9 +165,9 @@ Ez_Tag = {
 }
 
 # Insert text 
-EZname = st.text_input('Zone Name:', 'Pico y Placa')
+EZname = st.text_input('Zone Name:', placeholder='Write the name of the Environmental Zone')
+EZid = st.text_input('Zone ID:', placeholder='Write the id of the Environmental Zone')
 selected_categories = st.multiselect('Vehicle Categories:', list(vehicle_categories.keys()))
-EZid = st.text_input('Zone ID:', '')
 EZvr_selected = st.selectbox('Vehicle Restriction Value:', list(EZvr_values.keys()))
 EZtag_selected = st.selectbox('EzTag:', list(Ez_Tag.keys()))
 startdate = st.date_input('Start day:', datetime(2025, 1, 1))
@@ -174,14 +175,15 @@ enddate = st.date_input('End Day:', datetime(2025, 12, 31))
 times = st.text_input('Time Range:', '00:00-23:59')
 
 # Config Ezval for days
-ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
-    'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "])
-    }
+if EZvr_values[EZvr_selected] not in ['REL_VEH_AGE', 'ABS_VEH_AGE', 'MAX_TOTAL_WGHT', 'ENV_BADGE', 'MIN_TOTAL_WGHT']:
+    ezval = {'Monday': st.multiselect('Monday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Tuesday': st.multiselect('Tuesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Wednesday': st.multiselect('Wednesday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Thursday': st.multiselect('Thursday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Friday': st.multiselect('Friday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Saturday': st.multiselect('Saturday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "]),
+        'Sunday': st.multiselect('Sunday Values:', [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, "ODD", "EVEN", "STICKER"," "])
+        }
 
 # Start/End date to datetime
 f1 = startdate
@@ -402,6 +404,9 @@ restriction_by_day = st.checkbox("Restriction Day by Day", key="restriction_by_d
 st.session_state.restriction_by_day = restriction_by_day
 
 if st.session_state.restriction_by_day:
+    # Nuevo checkbox para seleccionar días laborales solamente
+    weekdays_only = st.checkbox(" Working days", key="weekdays_only_checkbox")
+
     # Group dates by month
     day_count = (enddate - startdate).days + 1
     dates_by_month = {}
@@ -414,7 +419,7 @@ if st.session_state.restriction_by_day:
             continue
 
         month_name = current_date.strftime('%B %Y')
-        
+
         if month_name not in dates_by_month:
             dates_by_month[month_name] = []
 
@@ -430,24 +435,32 @@ if st.session_state.restriction_by_day:
 
         with st.expander(f"📅 {month}", expanded=False):  # Collapsible month section
             for week_num, week_dates in enumerate(weeks, start=1):
+                # Filtra los días laborales si el checkbox está activado
+                filtered_week_dates = [d for d in week_dates if d.weekday() < 5] if weekdays_only else week_dates
+
+                num_days = len(filtered_week_dates)
+
                 st.write(f"**Week {week_num}**")
 
-                num_days = len(week_dates)
-                cols = st.columns(num_days)  # Columns for each day in the week
+                if num_days == 0:
+                    st.info("⚠️ There are no working days this week.")
+                    continue  # Salta a la siguiente semana
 
-                for i, date in enumerate(week_dates):
+                cols = st.columns(num_days)
+
+                for i, date in enumerate(filtered_week_dates):
                     weekday = date.strftime('%A')
                     plate_input = cols[i].text_area(
-                        f"{weekday} - {date.strftime('%d')}", 
+                        f"{weekday} - {date.strftime('%d')}",
                         key=f"{month}_{date.strftime('%d')}"
                     )
 
                     plates = [plate.strip() for plate in plate_input.split(',') if plate.strip()]
 
                     if plates:
-                        plates_per_day[date] = plates  # Records plates per day
+                        plates_per_day[date] = plates  # Registra las placas por día
 else:
-    plates_per_day = {}  # If it is not activated, leave plates_per_day empty
+    plates_per_day = {}  # Si no está activado, dejar vacío
 
 
 ##---------------------------Restrictions by Day END----------------------##
@@ -716,7 +729,7 @@ if "addt_df" in st.session_state:
 
 
 # Download buttons
-if "addt_csv" in st.session_state:
+if "rest_csv" in st.session_state:
     st.write("### 📥 Download files:")
     col1, col2, col3 = st.columns(3)
 
