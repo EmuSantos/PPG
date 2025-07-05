@@ -632,6 +632,7 @@ if st.button(" Create APAC Metadata🔵"):
             df.at[i, "vehicle_category"] != df.at[i - 1, "vehicle_category"] or
             df.at[i, "timeFrom_timeTo"] != df.at[i - 1, "timeFrom_timeTo"] or
             df.at[i, "dateFrom_dateTo"] != df.at[i - 1, "dateFrom_dateTo"]
+
         ):
             restriction_id += 1
         df.at[i, "Restriction_id"] = restriction_id
@@ -955,29 +956,58 @@ st.download_button(
 #                                                                                                      #
 ########################################################################################################
 from io import BytesIO
+import pandas as pd
+from datetime import datetime
+import streamlit as st
 
+# ---------- FUNCIONES ----------
 def convert_df_to_csv(df):
     output = BytesIO()
     df.to_csv(output, index=False, header=False, encoding='utf-8')
     output.seek(0)
     return output.getvalue()
 
+def load_required_sheets(file):
+    try:
+        xl = pd.ExcelFile(file)
+        sheets = xl.sheet_names
+        required = ['EZ_RESTR_UMRDomainComboRecord_L', 'EZ_TIME_RESTR_UMRDomainComboRec']
+        optional = 'EZ_ADDT_RESTRS_UMRDomainComboRe'
+        missing = [s for s in required if s not in sheets]
+        if missing:
+            raise ValueError(f"❌ Faltan las hojas requeridas: {', '.join(missing)}")
+        df_restr = xl.parse('EZ_RESTR_UMRDomainComboRecord_L')
+        df_time = xl.parse('EZ_TIME_RESTR_UMRDomainComboRec')
+        df_addt = xl.parse(optional) if optional in sheets else pd.DataFrame()
+        return df_addt, df_restr, df_time
+    except Exception as e:
+        raise ValueError(f"Error al procesar el archivo: {e}")
 
-# Inicializar session_state si no existen
+# ---------- INICIALIZAR ----------
 for key in ['mmt_addt_df', 'mmt_rest_df', 'mmt_time_restr_df',
             'mmt_addt_csv', 'mmt_rest_csv', 'mmt_time_restr_csv',
             'mmt_addt_filename', 'mmt_rest_filename', 'mmt_time_restr_filename']:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# Si se presiona el botón, genera y guarda en session_state
-if st.button('Create MMT Files🗂️'):
+EZname = "EZ"  # Puedes reemplazar esto con st.text_input si lo deseas dinámico
+EZid = "000"
 
-    # ---- ADDT ----
+# ---------- BOTÓN: USAR DATOS PREVIOS ----------
+if st.button('Use the previous data 🧩'):
+    if 'df_addt' in locals() and 'df_restr' in locals() and 'df_time_restr' in locals() and 'df_weekdays' in locals():
+        df_addt_use = df_addt
+        df_restr_use = df_restr
+        df_time_use = df_time_restr
+        df_weekdays_use = df_weekdays
+    else:
+        st.warning("⚠️ No se han generado datos aún dentro de la aplicación.")
+        st.stop()
+    
+    # Lógica igual que antes
     mmt_addt_data = []
-
-    if not df_addt.empty:
-        for _, row in df_addt.iterrows():
+    if not df_addt_use.empty:
+        for _, row in df_addt_use.iterrows():
             mmt_addt_data.append({
                 'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
                 'OK': 'OK',
@@ -986,33 +1016,16 @@ if st.button('Create MMT Files🗂️'):
                 'ADDITIONAL': row['EZ_ADDT_TAG(Desc)'],
                 'EZ_KEY_NAME': row['EZ_KEY_NAMES(Val)'],
                 'EZ_VALUES': row['EZ_VALUES(Desc)'],
-                'NULL': ' ',
-                'NULL2': ' ',
-                'NULL3': ' ',
-                'NULL4': ' ',
-                'NULL5': ' ',
-                'N': 'N'
+                'NULL': ' ', 'NULL2': ' ', 'NULL3': ' ', 'NULL4': ' ', 'NULL5': ' ', 'N': 'N'
             })
-        st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)[[
-            'EZ_ADDT_RESTRS', 'OK', 'ENVZONE_ID', 'Restriction_id',
-            'ADDITIONAL', 'EZ_KEY_NAME', 'EZ_VALUES',
-            'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
-        ]]
-    else:
-        st.session_state["mmt_addt_df"] = pd.DataFrame()  # Para evitar errores si luego se accede
+        st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)
 
-    # ---- REST ----
     mmt_rest_data = []
-    df = df_weekdays.copy()
-
-    # Asegúrate de que ambos DataFrames tienen el mismo número de filas si vas a sincronizarlos
-    min_len = min(len(df_restr), len(df))
-    df_restr = df_restr.head(min_len)
-    df = df.head(min_len)
-
-    for (_, row), (_, row2) in zip(df_restr.iterrows(), df.iterrows()):
+    min_len = min(len(df_restr_use), len(df_weekdays_use))
+    df_restr_trim = df_restr_use.head(min_len)
+    df_trim = df_weekdays_use.head(min_len)
+    for (_, row), (_, row2) in zip(df_restr_trim.iterrows(), df_trim.iterrows()):
         is_override = row2.get('EZ_VR_VALUES') == 'OVERRIDE'
-
         mmt_rest_data.append({
             'EZ_RESTR': 'EZ_RESTR',
             'OK': 'OK',
@@ -1021,23 +1034,13 @@ if st.button('Create MMT Files🗂️'):
             'vehicle_category_id': row['Vehicle Category(Val)'],
             'EZ_KEY_ID': row['EZ Vehicle Restrictions(Val)'],
             'LICENSE PLATE': ' ' if is_override else row2['EZ_VALUES'],
-            'NULL': ' ',
-            'NULL2': row2['EZ_VALUES'] if is_override else ' ',
-            'NULL3': ' ',
-            'NULL4': ' ',
-            'NULL5': ' ',
-            'N': 'N'
+            'NULL': ' ', 'NULL2': row2['EZ_VALUES'] if is_override else ' ', 
+            'NULL3': ' ', 'NULL4': ' ', 'NULL5': ' ', 'N': 'N'
         })
+    st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)
 
-    # Guardar en sesión el dataframe generado
-    st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)[[
-        'EZ_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id',
-        'vehicle_category_id', 'EZ_KEY_ID', 'LICENSE PLATE',
-        'NULL', 'NULL2', 'NULL3', 'NULL4', 'NULL5', 'N'
-    ]]
-    # ---- TIME_RESTR ----
     mmt_time_restr_data = []
-    for _, row in df_time_restr.iterrows():
+    for _, row in df_time_use.iterrows():
         mmt_time_restr_data.append({
             'EZ_TIME_RESTR': 'EZ_TIME_RESTR',
             'OK': 'OK',
@@ -1047,32 +1050,118 @@ if st.button('Create MMT Files🗂️'):
             'dayFrom_dayTo': row['Day From - DayTo (01-07)(Desc)'],
             'monthFrom_monthTo': row['Month From - Month To (1-12)(Desc)'],
             'dateFrom_dateTo': 'null',
-            'NULL': ' ',
-            'NULL2': ' ',
-            'NULL3': ' ',
-            'NULL4': ' ',
-            'N': 'N'
+            'NULL': ' ', 'NULL2': ' ', 'NULL3': ' ', 'NULL4': ' ', 'N': 'N'
         })
-    st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)[[
-        'EZ_TIME_RESTR', 'OK', 'ENVZONE_ID', 'Restriction_id',
-        'timeFrom_timeTo', 'dayFrom_dayTo', 'monthFrom_monthTo',
-        'dateFrom_dateTo', 'NULL', 'NULL2', 'NULL3', 'NULL4', 'N'
-    ]]
+    st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)
 
-    # ---- CSVs y nombres ----
+    # Guardar CSVs y nombres
+    today_str = datetime.now().strftime("%Y%m%d")
     st.session_state["mmt_addt_csv"] = convert_df_to_csv(st.session_state["mmt_addt_df"])
     st.session_state["mmt_rest_csv"] = convert_df_to_csv(st.session_state["mmt_rest_df"])
     st.session_state["mmt_time_restr_csv"] = convert_df_to_csv(st.session_state["mmt_time_restr_df"])
-
-    today_str = datetime.now().strftime("%Y%m%d")
     st.session_state["mmt_addt_filename"] = f"ADD_EZ_ADDT_REST_{EZname}_{EZid}_{today_str}.csv"
     st.session_state["mmt_rest_filename"] = f"ADD_EZ_REST_{EZname}_{EZid}_{today_str}.csv"
     st.session_state["mmt_time_restr_filename"] = f"ADD_EZ_TIME_RESTR_{EZname}_{EZid}_{today_str}.csv"
 
-# Mostrar siempre los resultados si existen
-##if st.session_state["mmt_addt_df"] is not None:
-    ##st.write("### 📊 ADD_EZ_ADDT_RESTRS DataFrame:")
-    ##st.dataframe(st.session_state["mmt_addt_df"])
+# ---------- SUBIDA DE ARCHIVO EXTERNO ----------
+st.write("### 📤 Subir archivo externo para generar MMT")
+uploaded_file = st.file_uploader("📎 Archivo Excel (.xlsx)", type=['xlsx'])
+
+if uploaded_file:
+    try:
+        df_addt_ext, df_restr_ext, df_time_ext = load_required_sheets(uploaded_file)
+        st.success("✅ Archivo cargado correctamente.")
+
+        if st.button("Process MMT Files 📄"):
+            df_addt = df_addt_ext
+            df_restr = df_restr_ext
+            df_time_restr = df_time_ext
+
+            # ---------- Procesar ADDT ----------
+            mmt_addt_data = []
+            if not df_addt.empty:
+                for _, row in df_addt.iterrows():
+                    mmt_addt_data.append({
+                        'EZ_ADDT_RESTRS': 'EZ_ADDT_RESTRS',
+                        'OK': 'OK',
+                        'ENVZONE_ID': row['ENVZONE(Val)'],
+                        'Restriction_id': row['RESTRICTION_ID(Desc)'],
+                        'ADDITIONAL': row['EZ_ADDT_TAG(Desc)'],
+                        'EZ_KEY_NAME': row['EZ_KEY_NAMES(Val)'],
+                        'EZ_VALUES': row['EZ_VALUES(Desc)'],
+                        'NULL': ' ',
+                        'NULL2': ' ',
+                        'NULL3': ' ',
+                        'NULL4': ' ',
+                        'NULL5': ' ',
+                        'N': 'N'
+                    })
+                st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)
+
+            # ---------- Procesar REST ----------
+            mmt_rest_data = []
+            override_values = ["LICENSE PLATE", "COST", "RESIDENTIALS"]
+            for _, row in df_restr.iterrows():
+                override_desc = row.get('Override(Desc)', '').strip().upper()
+                use_override = override_desc in override_values
+
+                mmt_rest_data.append({
+                    'EZ_RESTR': 'EZ_RESTR',
+                    'OK': 'OK',
+                    'ENVZONE_ID': row['Environmental Zone Id(Val)'],
+                    'Restriction_id': row['Restriction Id(Desc)'],
+                    'vehicle_category_id': row['Vehicle Category(Val)'],
+                    'EZ_KEY_ID': row['EZ Vehicle Restrictions(Val)'],
+                    'LICENSE PLATE': row['Restriction Value 1(Desc)'],
+                    'NULL': ' ',
+                    'NULL2': row['Restriction Value 1(Desc)'] if use_override else ' ',
+                    'NULL3': ' ',
+                    'NULL4': ' ',
+                    'NULL5': ' ',
+                    'N': 'N'
+                })
+            st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)
+
+            # ---------- Procesar TIME_RESTR ----------
+            mmt_time_restr_data = []
+            for _, row in df_time_restr.iterrows():
+                mmt_time_restr_data.append({
+                    'EZ_TIME_RESTR': 'EZ_TIME_RESTR',
+                    'OK': 'OK',
+                    'ENVZONE_ID': row['Environmental Zone Id(Val)'],
+                    'Restriction_id': row['Restriction Id(Desc)'],
+                    'timeFrom_timeTo': row['Time From (23:00) - Time To(Desc)'],
+                    'dayFrom_dayTo': row['Day From - DayTo (01-07)(Desc)'],
+                    'monthFrom_monthTo': row['Month From - Month To (1-12)(Desc)'],
+                    'dateFrom_dateTo': row['Date From (yyyymmdd) - Date to(Val)'],
+                    'NULL': ' ',
+                    'NULL2': ' ',
+                    'NULL3': ' ',
+                    'NULL4': ' ',
+                    'N': 'N'
+                })
+            st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)
+
+            # ---------- Guardar CSVs y nombres ----------
+            today_str = datetime.now().strftime("%Y%m%d")
+            EZname = "EZ"
+            EZid = "000"
+
+            st.session_state["mmt_addt_csv"] = convert_df_to_csv(st.session_state.get("mmt_addt_df", pd.DataFrame()))
+            st.session_state["mmt_rest_csv"] = convert_df_to_csv(st.session_state["mmt_rest_df"])
+            st.session_state["mmt_time_restr_csv"] = convert_df_to_csv(st.session_state["mmt_time_restr_df"])
+
+            st.session_state["mmt_addt_filename"] = f"ADD_EZ_ADDT_REST_{EZname}_{EZid}_{today_str}.csv"
+            st.session_state["mmt_rest_filename"] = f"ADD_EZ_REST_{EZname}_{EZid}_{today_str}.csv"
+            st.session_state["mmt_time_restr_filename"] = f"ADD_EZ_TIME_RESTR_{EZname}_{EZid}_{today_str}.csv"
+
+    except Exception as e:
+        st.error(f"❌ {e}")
+
+# ---------- MOSTRAR TABLAS Y DESCARGA ----------
+if st.session_state["mmt_addt_df"] is not None:
+    st.write("### 📊 ADD_EZ_ADDT_RESTRS DataFrame:")
+    st.dataframe(st.session_state["mmt_addt_df"])
 
 if st.session_state["mmt_rest_df"] is not None:
     st.write("### 📊 ADD_EZ_REST DataFrame:")
@@ -1082,25 +1171,25 @@ if st.session_state["mmt_time_restr_df"] is not None:
     st.write("### 📊 ADD_EZ_TIME_RESTR DataFrame:")
     st.dataframe(st.session_state["mmt_time_restr_df"])
 
-# Mostrar siempre los botones si existen los archivos
 if st.session_state["mmt_rest_csv"]:
     st.write("### 📥 Download files:")
-    col1, col2 = st.columns(2)
-
-    ##with col1:
-        ##st.download_button("📄 Download ADD_EZ_ADDT_RESTRS",
-            ##data=st.session_state["mmt_addt_csv"],
-            ##file_name=st.session_state["mmt_addt_filename"],
-            ##mime="text/csv")
+    col1, col2, col3 = st.columns(3)
 
     with col1:
+        st.download_button("📄 Download ADD_EZ_ADDT_RESTRS",
+            data=st.session_state["mmt_addt_csv"],
+            file_name=st.session_state["mmt_addt_filename"],
+            mime="text/csv")
+
+    with col2:
         st.download_button("📄 Download ADD_EZ_REST",
             data=st.session_state["mmt_rest_csv"],
             file_name=st.session_state["mmt_rest_filename"],
             mime="text/csv")
 
-    with col2:
+    with col3:
         st.download_button("📄 Download ADD_EZ_TIME_RESTR",
             data=st.session_state["mmt_time_restr_csv"],
             file_name=st.session_state["mmt_time_restr_filename"],
             mime="text/csv")
+
