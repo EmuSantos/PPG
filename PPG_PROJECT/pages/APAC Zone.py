@@ -1064,8 +1064,8 @@ if st.button('Use the previous data to generate MMT Files 🧩'):
     st.session_state["mmt_time_restr_filename"] = f"ADD_EZ_TIME_RESTR_{EZname}_{EZid}_{today_str}.csv"
 
 # ---------- SUBIDA DE ARCHIVO EXTERNO ----------
-st.write("### 📤 Upload external file to generate MMT Files")
-uploaded_file = st.file_uploader("📎 Excel File (.xlsx)", type=['xlsx'])
+st.write("### 📤MMT Files Processor")
+uploaded_file = st.file_uploader("📎 Upload external Excel File (.xlsx)", type=['xlsx'])
 
 if uploaded_file:
     try:
