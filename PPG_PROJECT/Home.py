@@ -100,8 +100,8 @@ with col_t3:
 
     st.link_button("▶️ Go to EMEA Demo", "https://here.webex.com/recordingservice/sites/here/recording/6a46e6cd47464456936776f7049889e9/playback")
 
-st.markdown("### 🗂️ MMT Files Creator")
-st.markdown("Quick tutorial for using the MMT File Creator.")
+st.markdown("### 🗂️ MMT Files Processor")
+st.markdown("Quick tutorial for using the MMT Files Processor.")
 st.link_button("▶️ Go to MMT Tutorial", 'https://here.webex.com/recordingservice/sites/here/recording/26a5a17a62db40b8822c2bd2d6a0687f/playback')
 
 
