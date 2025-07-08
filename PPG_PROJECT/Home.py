@@ -87,8 +87,11 @@ with col_t2:
             file_name="Work_Instruction_EZ_Metadata_APAC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+        
     except requests.exceptions.RequestException:
         st.error("⚠️ Could not load the tutorial document. Please try again later.")
+
+    st.link_button("Go to APAC Demo", 'https://here.webex.com/recordingservice/sites/here/recording/playback/e0bc8d64c8d849b8ad5e180c80ef294e')
 
 # EMEA Tutorial
 with col_t3:
@@ -96,6 +99,11 @@ with col_t3:
     st.markdown("Basic guide to metadata creation in EMEA zones.")
 
     st.button("Coming Soon..")
+
+st.markdown("### 🗂️ MMT Files Creator")
+st.markdown("Quick tutorial for using the MMT File Creator.")
+st.link_button("Go to MMT Tutorial", ' ')
+
 
 
 
