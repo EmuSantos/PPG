@@ -91,18 +91,18 @@ with col_t2:
     except requests.exceptions.RequestException:
         st.error("⚠️ Could not load the tutorial document. Please try again later.")
 
-    st.link_button("Go to APAC Demo", 'https://here.webex.com/recordingservice/sites/here/recording/playback/e0bc8d64c8d849b8ad5e180c80ef294e')
+    st.link_button("▶️ Go to APAC Demo", 'https://here.webex.com/recordingservice/sites/here/recording/playback/e0bc8d64c8d849b8ad5e180c80ef294e')
 
 # EMEA Tutorial
 with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
     st.markdown("Basic guide to metadata creation in EMEA zones.")
 
-    st.button("Coming Soon..")
+    st.link_button("▶️ Go to EMEA Demo", "https://here.webex.com/recordingservice/sites/here/recording/6a46e6cd47464456936776f7049889e9/playback")
 
 st.markdown("### 🗂️ MMT Files Creator")
 st.markdown("Quick tutorial for using the MMT File Creator.")
-st.link_button("Go to MMT Tutorial", ' ')
+st.link_button("▶️ Go to MMT Tutorial", 'https://here.webex.com/recordingservice/sites/here/recording/26a5a17a62db40b8822c2bd2d6a0687f/playback')
 
 
 
