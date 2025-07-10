@@ -197,8 +197,7 @@ Country_Code = {
 
 EZ_CatFeature = {
     'POLYGONAL FEATURE':'P',
-    'LINEAR FEATURE':'L',
-    'FEATURE POINT':'F'
+    'LINEAR FEATURE':'L'
 }
 
 
