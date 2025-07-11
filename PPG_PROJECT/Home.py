@@ -75,7 +75,7 @@ with col_t2:
     st.markdown("### 🔵 APAC Tutorial")
     st.markdown("Basic guide to metadata creation in APAC zones.")
     
-    docx_url = "https://github.com/EmuSantos/PPG/raw/main/Work_Instruction_EZ_Metadata_APAC.docx"
+    docx_url = "https://github.com/EmuSantos/PPG/blob/main/Work%20Instruction%20-%20APAC.docx"
     
     try:
         response = requests.get(docx_url)
@@ -84,7 +84,7 @@ with col_t2:
         st.download_button(
             label="⬇️ Download APAC DOCX",
             data=response.content,
-            file_name="Work_Instruction_EZ_Metadata_APAC.docx",
+            file_name="Work Instruction - APAC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         
@@ -97,13 +97,28 @@ with col_t2:
 with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
     st.markdown("Basic guide to metadata creation in EMEA zones.")
+    
+    docx_url = "https://github.com/EmuSantos/PPG/blob/main/Work%20Instruction%20-%20EMEA.docx"
+    
+    try:
+        response = requests.get(docx_url)
+        response.raise_for_status()
+    
+        st.download_button(
+            label="⬇️ Download EMEA Work Instruction",
+            data=response.content,
+            file_name="Work Instruction - EMEA.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        
+    except requests.exceptions.RequestException:
+        st.error("⚠️ Could not load the tutorial document. Please try again later.")
 
     st.link_button("▶️ Go to EMEA Demo", "https://here.webex.com/recordingservice/sites/here/recording/6a46e6cd47464456936776f7049889e9/playback")
 
 st.markdown("### 🗂️ MMT Files Processor")
 st.markdown("Quick tutorial for using the MMT Files Processor.")
 st.link_button("▶️ Go to MMT Tutorial", 'https://here.webex.com/recordingservice/sites/here/recording/26a5a17a62db40b8822c2bd2d6a0687f/playback')
-
 
 
 
