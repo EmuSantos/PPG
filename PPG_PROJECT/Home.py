@@ -67,13 +67,13 @@ col_t1, col_t2, col_t3 = st.columns(3)
 # AMER Tutorial
 with col_t1:
     st.markdown("### 🟢 AMER Tutorial")
-    st.markdown("Basic guide to metadata creation in American zones.")
+    st.markdown("Download the step-by-step guide or watch a tutorial with examples for AMER zone.")
     st.button("Coming Soon...")
 
 import requests
 with col_t2:
     st.markdown("### 🔵 APAC Tutorial")
-    st.markdown("Basic guide to metadata creation in APAC zones.")
+    st.markdown("Download the step-by-step guide or watch a tutorial with examples for APAC zone.")
     
     docx_url = "https://github.com/EmuSantos/PPG/blob/main/Work%20Instruction%20-%20APAC.docx"
     
@@ -82,7 +82,7 @@ with col_t2:
         response.raise_for_status()
     
         st.download_button(
-            label="⬇️ Download APAC DOCX",
+            label="⬇️ APAC Work Instruction",
             data=response.content,
             file_name="Work Instruction - APAC.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -96,7 +96,7 @@ with col_t2:
 # EMEA Tutorial
 with col_t3:
     st.markdown("### 🔴 EMEA Tutorial")
-    st.markdown("Basic guide to metadata creation in EMEA zones.")
+    st.markdown("Download the step-by-step guide or watch a tutorial with examples for EMEA zone")
     
     docx_url = "https://github.com/EmuSantos/PPG/blob/main/Work%20Instruction%20-%20EMEA.docx"
     
@@ -105,7 +105,7 @@ with col_t3:
         response.raise_for_status()
     
         st.download_button(
-            label="⬇️ Download EMEA Work Instruction",
+            label="⬇️ EMEA Work Instruction",
             data=response.content,
             file_name="Work Instruction - EMEA.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
