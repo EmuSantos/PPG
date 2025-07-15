@@ -1,3 +1,20 @@
+###!/usr/bin/env python3
+
+"""
+EZ Metadata Generator
+---------------------
+
+This application automatically generates structured metadata in CSV or Excel format 
+for environmental restriction zones, based on vehicle categories, applicable days, 
+assigned values, schedules, and types of restrictions.
+
+It streamlines the creation of files compatible with traffic management or 
+environmental control systems by standardizing the information according to EZ system requirements.
+
+Developed by: Emi Santos  
+Creation date: July 2025
+"""
+
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
@@ -223,9 +240,6 @@ OverrideDesc = {
     'RESIDENTIALS':'RESIDENTIALS'
 }
 
-###ACTUALIZAR EL OVERRIDE EN TODO, METADATA Y MMT
-###OCULTAR LOS ADDT 
-###ACTUALIZAR EL RELATIVE VEHICLE AGE
 if 'records_weekdays' not in st.session_state:
     st.session_state.records_weekdays = []
 
@@ -253,7 +267,7 @@ EzLang = st.selectbox('Lang Description:', ['Select a language...'] + list(Lan_C
     
 EzWeb = st.text_input('Web-Site for EZ:', placeholder='Copy URL')
 
-# Nuevos inputs divididos
+# New split inputs
 EzValDays = st.multiselect('Days to Apply Restriction:', ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
 
 if EZvr_values[EZvr_selected] not in ['MAX_TOTAL_WGHT', 'MIN_TOTAL_WGHT', 'REL_VEH_AGE', 'OVERRIDE']:
@@ -269,7 +283,7 @@ f2 = enddate
 
 
 
-# Mapea nombre de día a código
+# Map day name to code
 def dayy(varname):
     day_map = {
         'Monday': '02',
@@ -300,10 +314,10 @@ if EZvr_selected == 'RELATIVE VEHICLE AGE':
 if EZvr_selected == 'ABSOLUTE VEHICLE AGE':
     selected_dateAbs = st.date_input('Enter Absolute Vehicle Age Restriction:')
 
-# Definir OverrideVal como variable de control
+# Define OverrideVal as control variable
 OverrideVal = None
 
-# Input para tipo de OVERRIDE si es seleccionado
+# Input for OVERRIDE type if selected
 if EZvr_values[EZvr_selected] == 'OVERRIDE':
     OverrideVal = st.selectbox("Select Override Type:", list(OverrideDesc.keys()))
 
@@ -312,14 +326,14 @@ month_range = monthm(f1) if monthm(f1) == monthm(f2) else f"{monthm(f1)}-{monthm
 def generate_records_batch():
     records = []
 
-    # Asegura que existan categorías seleccionadas
+    # Ensure that categories are selected
     if not selected_categories:
         return []
 
     selected_day_codes = [dayy(day) for day in EzValDays]
     all_days_str = ', '.join(sorted(selected_day_codes))
 
-   # Caso especial para OVERRIDE
+   #  Special case for OVERRIDE
     if EZvr_values[EZvr_selected] == 'OVERRIDE' and OverrideVal:
         if EzValDays and selected_categories:
             for category in selected_categories:
@@ -327,10 +341,10 @@ def generate_records_batch():
                     EZname, EZid,
                     category,
                     vehicle_categories.get(category, ''),
-                    EZvr_values[EZvr_selected],     # EZ Vehicle Restriction Val
-                    Ez_Tag[EZtag_selected],         # EZ Tag Desc
-                    EZvr_selected,                  # 👈 Aquí va el primer valor legible del EZvr_selected
-                    EZtag_selected,                 # EZ Tag Val (interno)
+                    EZvr_values[EZvr_selected],    
+                    Ez_Tag[EZtag_selected],        
+                    EZvr_selected,                  
+                    EZtag_selected,                 
                     OverrideVal,
                     times,
                     all_days_str,
@@ -340,9 +354,9 @@ def generate_records_batch():
                 records.append(record)
         return records
 
-    # Caso especial para RELATIVE VEHICLE AGE
+    # Special case for  RELATIVE VEHICLE AGE
     if EZvr_values[EZvr_selected] == 'REL_VEH_AGE': 
-        Relative_VehicleVal = selected_date.strftime('%d/%m/%Y')  # Formato "DD/MM/YYYY"
+        Relative_VehicleVal = selected_date.strftime('%d/%m/%Y')  # Format "DD/MM/YYYY"
 
         if EzValDays and selected_categories:
             for category in selected_categories:
@@ -362,7 +376,7 @@ def generate_records_batch():
                     )
                     records.append(record)
         return records
-# Caso especial para ABSOLUTE VEHICLE AGE
+# Special case for  ABSOLUTE VEHICLE AGE
     if EZvr_values[EZvr_selected] == 'ABS_VEH_AGE': 
         Absolute_VehicleVal = selected_dateAbs.strftime('%d/%m/%Y')  # Formato "DD/MM/YYYY"
 
@@ -386,7 +400,7 @@ def generate_records_batch():
         return records
 
 
-    # MIN_WEIGHT
+    # Special case for  MIN_WEIGHT
     if EZvr_values[EZvr_selected] == 'MIN_TOTAL_WGHT' and min_weight.strip():
         for category in selected_categories:
             record = addreg(
@@ -406,7 +420,7 @@ def generate_records_batch():
             records.append(record)
         return records    
 
-    # MAX_WEIGHT
+    #Special case for  MAX_WEIGHT
     elif EZvr_values[EZvr_selected] == 'MAX_TOTAL_WGHT' and max_weight.strip():
         for category in selected_categories:
             record = addreg(
@@ -427,7 +441,7 @@ def generate_records_batch():
         return records
 
     else:
-        # Valores estándar: EURO, STICKER, etc.
+        # Standar values: EURO, STICKER, etc.
         total_days = len(EzValDays)
         total_vals = len(EzValValues)
 
@@ -513,36 +527,36 @@ if st.button('Generate Records▶️'):
     
             
 
-# Si no hay registros, inicializa la variable
+# If there are no records, initialize the variable.
 if 'df_processed_for_display' not in st.session_state:
     st.session_state.df_processed_for_display = []
 
-# Crea el DataFrame a partir de los registros
+# Create the DataFrame from the records.
 df_weekdays = pd.DataFrame(st.session_state.records_weekdays)
 
 
-# Asegura que existan registros
+# Ensure that records exist.
 if 'records_weekdays' in st.session_state and st.session_state.records_weekdays:
 
 
-    # Aplica orden por columnas si existen
+    # Apply order by columns if they exist.
     if 'EZ_KEY_NAME' in df_weekdays.columns:
         df_weekdays.sort_values(by='EZ_KEY_NAME', ascending=True, kind='stable', inplace=True)
 
     if 'vehicle_category' in df_weekdays.columns:
         df_weekdays.sort_values(by='vehicle_category', ascending=True, kind='stable', inplace=True)
 
-    # Exportación CSV
+    #CSV export.
     file_name = f"EZ_{EZname}_{EZid}_Metadata_{datetime.now().year}.csv"
     csv = df_weekdays.to_csv(index=False, quoting=1).encode('utf-8')
 
-    # Botones horizontales para modificar columnas específicas
+    # Horizontal buttons to modify specific columns.
     col1, col2, col3 = st.columns(3)
     null_time_pressed = col1.button("🕐 Null-Time")
     null_day_pressed = col2.button("📅 Null-Day")
     null_date_pressed = col3.button("📆 Null-Date")
 
-    # Aplicar cambios si se presiona algún botón
+    # Apply changes if any button is pressed.
     if null_time_pressed or null_day_pressed or null_date_pressed:
         df_modified = df_weekdays.copy()
 
@@ -553,13 +567,13 @@ if 'records_weekdays' in st.session_state and st.session_state.records_weekdays:
         if null_date_pressed and 'dateFrom_dateTo' in df_modified.columns:
             df_modified['dateFrom_dateTo'] = 'null'
 
-        # Reemplaza registros en session_state
+        # Replace records in session_state.
         st.session_state.records_weekdays = df_modified.to_dict(orient='records')
-        df_weekdays = df_modified  # Actualiza para mostrar el nuevo DataFrame
+        df_weekdays = df_modified  # Update to display the new DataFrame
 
         st.success(f'{len(df_weekdays)} nullified records saved!')
 
-# Mostrar mensaje y DataFrame final
+# Display message and final DataFrame
 st.write('## Previous Data Display :')
 st.write('Ensure that all data is complete and correct before processing the APAC Metadata.')
 st.data_editor(df_weekdays, num_rows="dynamic", key="editor_df_weekdays")
@@ -575,7 +589,7 @@ import pandas as pd
 import streamlit as st
 from io import BytesIO
 
-# Asegura que las variables necesarias estén definidas
+# Ensure that the necessary variables are defined.
 if 'EZ_ADDT' not in st.session_state:
     st.session_state.EZ_ADDT = []
 
@@ -606,23 +620,22 @@ if 'ENVZONE_UMR' not in st.session_state:
 if 'ENVZONE_CHAR' not in st.session_state:
     st.session_state.ENVZONE_CHAR = []    
 
-##Deleted EZ_ADDT if selected MIN o MAX WEIGHT
 generate_addt = not (EZvr_selected in ['MAX TOTAL WEIGHT', 'MIN TOTAL WEIGHT'])
 
 if 'Restriction_ODDEVEN' not in st.session_state:
     st.session_state.Restriction_ODDEVEN = 1
 
-# Botón para crear la metadata y generar el archivo
+# Button to create metadata and generate the file.
 if st.button(" Create APAC Metadata🔵"):
 
     df = df_weekdays.copy()
     lang = EzLang
     lang_code = Lan_Code[lang]
 
-    # Ordenar para asegurar consistencia en los valores comparados
+    #  Sort to ensure consistency in the values compared.
     df = df.sort_values(by=["vehicle_category", "timeFrom_timeTo", "dateFrom_dateTo"]).reset_index(drop=True)
 
-    # Generar RESTRICTION_ID basados en cambios de grupo
+    #  Generate RESTRICTION_ID based on group changes.
     restriction_id = 1
     df.at[0, "Restriction_id"] = restriction_id
 
@@ -636,7 +649,7 @@ if st.button(" Create APAC Metadata🔵"):
             restriction_id += 1
         df.at[i, "Restriction_id"] = restriction_id
 
-    # Guardar df actualizado en session_state (opcional)
+    #Save updated df in session_state (optional).
     st.session_state.df_restriction_ready = df
 
 ##__________________EZ_ADDT_UMRDomainComboRecord____________________________
@@ -694,16 +707,16 @@ if st.button(" Create APAC Metadata🔵"):
 
 # __________________EZ_TIME_RESTR_UMRDomainComboRecord___________________________
 
-    # Extraer los Restriction_id únicos basados en la combinación clave
+    # Extract unique Restriction_id based on the key combination.
     used_restrictions = set()
 
     for _, row in df.iterrows():
         restriction_id = row["Restriction_id"]
 
         if restriction_id in used_restrictions:
-            continue  # 🔁 Salta si ya se ha usado
+            continue  
 
-        used_restrictions.add(restriction_id)  # ✅ Marca como usado
+        used_restrictions.add(restriction_id)  
 
         st.session_state.EZ_TIME_RESTR.append({
             'Environmental Zone Id(Desc)': EZname,
@@ -721,7 +734,6 @@ if st.button(" Create APAC Metadata🔵"):
             'valResult': 'OK'
         })
 
-###MODIFICAR PARA QUE VERIFIQUE CON EL DF, NO CON LOS INPUTS
 
 ##__________________EZ_VEH_RESTR_UMRDomainComboRecord____________________________
     
@@ -773,14 +785,14 @@ if st.button(" Create APAC Metadata🔵"):
 
 
 ##__________________EZ_POLYRESTR_UMRDomainComboRecord____________________________
-    # Subclasificación de categorías
+    # Subclassification of categories
     auto_group = {'AUTO', 'CARPOOL', 'MOTORCYCLE', 'THROUGH_TRAFFIC', 'TAXI'}
     truck_group = {'TRUCK', 'DELIVERY TRUCK'}
     bus_group = {'BUS'}
     for vehicle in selected_categories:
         selected_set = set(selected_categories)
 
-        # Determinar tipo de restricción poligonal
+        # Determine type of polygonal restriction
         poly_type = None
 
         if selected_set.issubset(truck_group):
@@ -792,7 +804,7 @@ if st.button(" Create APAC Metadata🔵"):
         elif selected_set.issubset(auto_group.union(truck_group, bus_group, {'ALL VEHICLES'})):
             poly_type = 'AUTOS AND TRUCKS'
 
-        # Agregar resultado si se identificó tipo de polígono
+        # Add result if polygon type was identified
     if poly_type:
         st.session_state.EZ_POLYRESTR.append({
                 'Environmental Zone(Desc)': EZname,
@@ -810,7 +822,6 @@ if add_new_city:
     selected_country = st.selectbox("Select Country:", list(Country_Code.keys()))
     selected_category = st.selectbox("Select EZ Category Feature:", list(EZ_CatFeature.keys()))
     add_new_data = st.button('Add New City Information')
-    # Evitar duplicados por EZid
     exists = any(d['Value'] == EZid for d in st.session_state.ENVZONE_UMR)
     if not exists:
         st.session_state.ENVZONE_UMR.append({
@@ -894,11 +905,11 @@ if add_new_city:
 # --- Save to Excel as a single file with two sheets ---
 from io import BytesIO
 
-# Calcular fecha actual para el nombre del archivo
+# Calculate current date for file name
 today_str = datetime.now().strftime("%Y%m%d")
 filename = f"{EZname}_METADATA_{today_str}.xlsx"
 
-# Actualizar 'Month From - Month To (1-12)(Desc)' si aplica
+#  Update ‘Month From - Month To (1-12)(Desc)’ if applicable
 if EZvr_selected == 'MIN TOTAL WEIGHT':
     start_month = monthm(startdate)
     end_month = monthm(enddate)
@@ -906,7 +917,7 @@ if EZvr_selected == 'MIN TOTAL WEIGHT':
     for entry in st.session_state.EZ_TIME_RESTR:
         entry['Month From - Month To (1-12)(Desc)'] = month_range
 
-# Crear archivo Excel en memoria
+# Create Excel file in memory
 excel_buffer = BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
     workbook = writer.book
@@ -916,11 +927,11 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
 
         worksheet = writer.sheets[sheet_name]
 
-        # Escribir encabezados sin formato
+        # Write unformatted headers
         for col_num, column_title in enumerate(df.columns):
             worksheet.write(0, col_num, column_title)
 
-        # Ajustar el ancho de las columnas automáticamente
+        # Adjust column width automatically
         for i, col in enumerate(df.columns):
             max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
             worksheet.set_column(i, i, max_len)
@@ -941,7 +952,7 @@ with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
         write_sheet_autofit(df_envzone_umr, 'ENVZONE_UMRDomainValue_List_')
         write_sheet_autofit(df_envzone_char, 'ENVZONE_CHAR_UMRDomainComboReco')
 
-# Botón de descarga
+# Download button
 st.download_button(
     label="Download APAC Metadata Excel File⬇️",
     data=excel_buffer.getvalue(),
@@ -961,7 +972,7 @@ import streamlit as st
 
 
 st.write("### 📤 MMT Files Processor")
-# ---------- FUNCIONES ----------
+# FUNCTIONS
 def convert_df_to_csv(df):
     output = BytesIO()
     df.to_csv(output, index=False, header=False, encoding='utf-8')
@@ -984,14 +995,14 @@ def load_required_sheets(file):
     except Exception as e:
         raise ValueError(f"Error processing the file: {e}")
 
-# ---------- INICIALIZAR ----------
+# INITIALIZE
 for key in ['mmt_addt_df', 'mmt_rest_df', 'mmt_time_restr_df',
             'mmt_addt_csv', 'mmt_rest_csv', 'mmt_time_restr_csv',
             'mmt_addt_filename', 'mmt_rest_filename', 'mmt_time_restr_filename']:
     if key not in st.session_state:
         st.session_state[key] = None
 
-# ---------- BOTÓN: USAR DATOS PREVIOS ----------
+# BUTTON: USE PREVIOUS DATA
 if st.button('Use Previous Data 🧩'):
     if 'df_addt' in locals() and 'df_restr' in locals() and 'df_time_restr' in locals() and 'df_weekdays' in locals():
         df_addt_use = df_addt
@@ -1002,7 +1013,7 @@ if st.button('Use Previous Data 🧩'):
         st.warning("⚠️ No data has been generated within the application yet.")
         st.stop()
 
-    # Extraer EZname y EZid
+    # Extrac EZname & EZid
     EZname_unique = df_restr_use['Environmental Zone Id(Desc)'].dropna().unique()
     EZid_unique = df_restr_use['Environmental Zone Id(Val)'].dropna().unique()
     EZname = str(EZname_unique[0])
@@ -1010,7 +1021,7 @@ if st.button('Use Previous Data 🧩'):
     if len(EZname_unique) > 1 or len(EZid_unique) > 1:
         st.warning("⚠️ Multiple values for EZname or EZid were found. The first one will be used.")
 
-    # Procesar ADDT
+    # Process ADDT
     mmt_addt_data = []
     if not df_addt_use.empty:
         for _, row in df_addt_use.iterrows():
@@ -1031,7 +1042,7 @@ if st.button('Use Previous Data 🧩'):
             })
         st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)
 
-    # Procesar REST
+    # Process REST
     mmt_rest_data = []
     min_len = min(len(df_restr_use), len(df_weekdays_use))
     df_restr_trim = df_restr_use.head(min_len)
@@ -1055,7 +1066,7 @@ if st.button('Use Previous Data 🧩'):
         })
     st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)
 
-    # Procesar TIME_RESTR
+    # Process TIME_RESTR
     mmt_time_restr_data = []
     for _, row in df_time_use.iterrows():
         mmt_time_restr_data.append({
@@ -1075,7 +1086,7 @@ if st.button('Use Previous Data 🧩'):
         })
     st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)
 
-    # Guardar CSVs y nombres
+    # Save CSVs and names
     today_str = datetime.now().strftime("%Y%m%d")
     st.session_state["mmt_addt_csv"] = convert_df_to_csv(st.session_state.get("mmt_addt_df", pd.DataFrame()))
     st.session_state["mmt_rest_csv"] = convert_df_to_csv(st.session_state["mmt_rest_df"])
@@ -1084,7 +1095,7 @@ if st.button('Use Previous Data 🧩'):
     st.session_state["mmt_rest_filename"] = f"ADD_EZ_REST_{EZname}_{EZid}_{today_str}.csv"
     st.session_state["mmt_time_restr_filename"] = f"ADD_EZ_TIME_RESTR_{EZname}_{EZid}_{today_str}.csv"
 
-# ---------- SUBIDA DE ARCHIVO EXTERNO ----------
+# EXTERNAL FILE UPLOAD
 uploaded_file = st.file_uploader("📎 Upload external Excel File (.xlsx)", type=['xlsx'])
 
 if uploaded_file:
@@ -1097,7 +1108,7 @@ if uploaded_file:
             df_restr = df_restr_ext
             df_time_restr = df_time_ext
 
-            # Extraer EZname y EZid
+            # Extract EZname and EZid
             EZname_unique = df_restr['Environmental Zone Id(Desc)'].dropna().unique()
             EZid_unique = df_restr['Environmental Zone Id(Val)'].dropna().unique()
             EZname = str(EZname_unique[0])
@@ -1105,7 +1116,7 @@ if uploaded_file:
             if len(EZname_unique) > 1 or len(EZid_unique) > 1:
                 st.warning("⚠️ Multiple values for EZname or EZid were found. The first one will be used.")
 
-            # Procesar ADDT
+            # Process ADDT
             mmt_addt_data = []
             if not df_addt.empty:
                 for _, row in df_addt.iterrows():
@@ -1126,7 +1137,7 @@ if uploaded_file:
                     })
             st.session_state["mmt_addt_df"] = pd.DataFrame(mmt_addt_data)
 
-            # Procesar REST
+            # Process REST
             mmt_rest_data = []
             override_values = ["LICENSE PLATE", "COST", "RESIDENTIALS"]
             for _, row in df_restr.iterrows():
@@ -1149,7 +1160,7 @@ if uploaded_file:
                 })
             st.session_state["mmt_rest_df"] = pd.DataFrame(mmt_rest_data)
 
-            # Procesar TIME_RESTR
+            # Process TIME_RESTR
             mmt_time_restr_data = []
             for _, row in df_time_restr.iterrows():
                 mmt_time_restr_data.append({
@@ -1169,7 +1180,7 @@ if uploaded_file:
                 })
             st.session_state["mmt_time_restr_df"] = pd.DataFrame(mmt_time_restr_data)
 
-            # Guardar CSVs y nombres
+            # Save CSVs and names
             today_str = datetime.now().strftime("%Y%m%d")
             st.session_state["mmt_addt_csv"] = convert_df_to_csv(st.session_state.get("mmt_addt_df", pd.DataFrame()))
             st.session_state["mmt_rest_csv"] = convert_df_to_csv(st.session_state["mmt_rest_df"])
@@ -1181,7 +1192,7 @@ if uploaded_file:
     except Exception as e:
         st.error(f"❌ {e}")
 
-# ---------- MOSTRAR TABLAS Y DESCARGA ----------
+# SHOW TABLES AND DOWNLOAD
 if st.session_state["mmt_addt_df"] is not None:
     st.write("### 📊 ADD_EZ_ADDT_RESTRS DataFrame:")
     st.dataframe(st.session_state["mmt_addt_df"])
